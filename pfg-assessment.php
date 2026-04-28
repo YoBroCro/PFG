@@ -67,10 +67,6 @@ function pfg_enqueue_assets() {
 // ─── SHORTCODE ────────────────────────────────────────────────────────────
 add_shortcode( 'pfg_assessment', 'pfg_render_assessment' );
 function pfg_render_assessment() {
-    if ( ! is_user_logged_in() ) {
-        return '<p class="pfg-login-notice">Please <a href="' . esc_url( wp_login_url( get_permalink() ) ) . '">log in</a> to take the assessment.</p>';
-    }
-
     $csfs = [
         'communication' => [ 'label' => 'Communication',       'tip' => 'The effectiveness of information flow across the team and organization.' ],
         'knowledge'     => [ 'label' => 'Knowledge & Skills',  'tip' => 'The level of expertise and competencies team members currently possess.' ],
@@ -186,13 +182,10 @@ function pfg_render_assessment() {
 }
 
 // ─── AJAX HANDLER ─────────────────────────────────────────────────────────
-add_action( 'wp_ajax_pfg_submit', 'pfg_handle_submit' );
+add_action( 'wp_ajax_pfg_submit',        'pfg_handle_submit' );
+add_action( 'wp_ajax_nopriv_pfg_submit', 'pfg_handle_submit' );
 function pfg_handle_submit() {
     check_ajax_referer( 'pfg_submit_nonce', 'nonce' );
-
-    if ( ! is_user_logged_in() ) {
-        wp_send_json_error( [ 'message' => 'Authentication required.' ] );
-    }
 
     $csf_keys = [
         'communication', 'knowledge', 'leadership', 'measurement', 'morale',
@@ -263,27 +256,119 @@ function pfg_admin_menu() {
 function pfg_render_admin_page() {
     global $wpdb;
     $table = $wpdb->prefix . 'pfg_assessments';
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-    $rows  = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY submitted_at DESC" );
+
+    $csf_cols = [
+        'score_communication' => 'Comm.',
+        'score_knowledge'     => 'Know.',
+        'score_leadership'    => 'Lead.',
+        'score_measurement'   => 'Meas.',
+        'score_morale'        => 'Morale',
+        'score_process'       => 'Proc.',
+        'score_recognition'   => 'Recog.',
+        'score_resource_qty'  => 'Res.Qty',
+        'score_resource_qual' => 'Res.Qual',
+        'score_standards'     => 'Std.',
+    ];
+
+    // Filters
+    $filter_company = isset( $_GET['pfg_company'] ) ? sanitize_text_field( wp_unslash( $_GET['pfg_company'] ) ) : '';
+    $filter_dept    = isset( $_GET['pfg_dept'] )    ? sanitize_text_field( wp_unslash( $_GET['pfg_dept'] ) )    : '';
+
+    $where  = 'WHERE 1=1';
+    $params = [];
+    if ( $filter_company ) { $where .= ' AND company = %s';    $params[] = $filter_company; }
+    if ( $filter_dept )    { $where .= ' AND department = %s'; $params[] = $filter_dept; }
+
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
+    if ( $params ) {
+        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} {$where} ORDER BY submitted_at DESC", ...$params ) );
+    } else {
+        $rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY submitted_at DESC" );
+    }
+
+    // Aggregate averages (unfiltered)
+    $avg_total = $wpdb->get_var( "SELECT AVG(total_score) FROM {$table}" );
+    $csf_avgs  = [];
+    foreach ( array_keys( $csf_cols ) as $col ) {
+        $csf_avgs[ $col ] = $wpdb->get_var( "SELECT AVG({$col}) FROM {$table}" );
+    }
+
+    // Filter option lists
+    $companies   = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
+    $departments = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    // phpcs:enable
+
+    $page_url = admin_url( 'admin.php?page=pfg-assessments' );
     ?>
     <div class="wrap">
-        <h1>PFG Predictive Index &#8212; Submissions</h1>
-        <table class="wp-list-table widefat fixed striped">
+        <h1 style="display:flex;align-items:center;gap:12px;">
+            PFG Predictive Index &#8212; Submissions
+            <a href="<?php echo esc_url( admin_url( 'admin-post.php?action=pfg_export_csv' ) ); ?>"
+               class="button button-secondary">&#8595; Export CSV</a>
+        </h1>
+
+        <!-- Aggregate Averages -->
+        <?php if ( $avg_total ) : ?>
+        <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px 20px;margin:16px 0;">
+            <strong>Aggregate Averages</strong>
+            <table style="margin-top:10px;border-collapse:collapse;width:100%;">
+                <tr>
+                    <th style="text-align:left;padding:4px 10px 4px 0;white-space:nowrap;">Total Score Avg</th>
+                    <td style="padding:4px 0;"><strong><?php echo esc_html( number_format( (float) $avg_total, 1 ) ); ?> / 100</strong></td>
+                </tr>
+                <?php foreach ( $csf_cols as $col => $label ) : ?>
+                <tr>
+                    <th style="text-align:left;padding:4px 10px 4px 0;white-space:nowrap;font-weight:normal;"><?php echo esc_html( $label ); ?></th>
+                    <td style="padding:4px 0;"><?php echo esc_html( number_format( (float) $csf_avgs[ $col ], 1 ) ); ?> / 10</td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+        <?php endif; ?>
+
+        <!-- Filters -->
+        <form method="get" action="<?php echo esc_url( $page_url ); ?>" style="margin-bottom:16px;">
+            <input type="hidden" name="page" value="pfg-assessments">
+            <select name="pfg_company" style="margin-right:8px;">
+                <option value="">All Companies</option>
+                <?php foreach ( $companies as $c ) : ?>
+                    <option value="<?php echo esc_attr( $c ); ?>" <?php selected( $filter_company, $c ); ?>><?php echo esc_html( $c ); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="pfg_dept" style="margin-right:8px;">
+                <option value="">All Departments</option>
+                <?php foreach ( $departments as $d ) : ?>
+                    <option value="<?php echo esc_attr( $d ); ?>" <?php selected( $filter_dept, $d ); ?>><?php echo esc_html( $d ); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="button">Filter</button>
+            <?php if ( $filter_company || $filter_dept ) : ?>
+                <a href="<?php echo esc_url( $page_url ); ?>" class="button" style="margin-left:6px;">Clear</a>
+            <?php endif; ?>
+        </form>
+
+        <!-- Submissions Table -->
+        <div style="overflow-x:auto;">
+        <table class="wp-list-table widefat fixed striped" style="min-width:1100px;">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th style="width:32px">#</th>
                     <th>Name</th>
                     <th>Company</th>
-                    <th>Department</th>
+                    <th>Dept</th>
                     <th>Email</th>
-                    <th>Total Score</th>
-                    <th>Tier</th>
-                    <th>Date</th>
+                    <?php foreach ( $csf_cols as $col => $label ) : ?>
+                        <th style="width:56px;text-align:center;" title="<?php echo esc_attr( $col ); ?>"><?php echo esc_html( $label ); ?></th>
+                    <?php endforeach; ?>
+                    <th style="width:56px;text-align:center;">Total</th>
+                    <th style="width:90px;">Tier</th>
+                    <th style="width:130px;">Date</th>
                 </tr>
             </thead>
             <tbody>
             <?php if ( empty( $rows ) ) : ?>
-                <tr><td colspan="8">No submissions yet.</td></tr>
+                <tr><td colspan="<?php echo 8 + count( $csf_cols ); ?>">No submissions found.</td></tr>
             <?php else : foreach ( $rows as $row ) : ?>
                 <tr>
                     <td><?php echo esc_html( $row->id ); ?></td>
@@ -291,13 +376,67 @@ function pfg_render_admin_page() {
                     <td><?php echo esc_html( $row->company ); ?></td>
                     <td><?php echo esc_html( $row->department ); ?></td>
                     <td><?php echo esc_html( $row->email ); ?></td>
-                    <td><strong><?php echo esc_html( $row->total_score ); ?></strong></td>
+                    <?php foreach ( array_keys( $csf_cols ) as $col ) : ?>
+                        <td style="text-align:center;"><?php echo esc_html( $row->$col ); ?></td>
+                    <?php endforeach; ?>
+                    <td style="text-align:center;"><strong><?php echo esc_html( $row->total_score ); ?></strong></td>
                     <td><?php echo esc_html( pfg_get_tier( (int) $row->total_score ) ); ?></td>
                     <td><?php echo esc_html( $row->submitted_at ); ?></td>
                 </tr>
             <?php endforeach; endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
     <?php
+}
+
+// ─── CSV EXPORT ───────────────────────────────────────────────────────────
+add_action( 'admin_post_pfg_export_csv', 'pfg_export_csv' );
+function pfg_export_csv() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Unauthorised.' );
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'pfg_assessments';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $rows  = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY submitted_at DESC", ARRAY_A );
+
+    $filename = 'pfg-assessments-' . gmdate( 'Y-m-d' ) . '.csv';
+    header( 'Content-Type: text/csv; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
+    $out = fopen( 'php://output', 'w' );
+    fputcsv( $out, [
+        'ID', 'Name', 'Company', 'Department', 'Email',
+        'Communication', 'Knowledge', 'Leadership', 'Measurement', 'Morale',
+        'Process', 'Recognition', 'Resource Qty', 'Resource Qual', 'Standards',
+        'Total Score', 'Tier', 'Submitted At',
+    ] );
+
+    foreach ( $rows as $row ) {
+        fputcsv( $out, [
+            $row['id'],
+            $row['user_name'],
+            $row['company'],
+            $row['department'],
+            $row['email'],
+            $row['score_communication'],
+            $row['score_knowledge'],
+            $row['score_leadership'],
+            $row['score_measurement'],
+            $row['score_morale'],
+            $row['score_process'],
+            $row['score_recognition'],
+            $row['score_resource_qty'],
+            $row['score_resource_qual'],
+            $row['score_standards'],
+            $row['total_score'],
+            pfg_get_tier( (int) $row['total_score'] ),
+            $row['submitted_at'],
+        ] );
+    }
+    fclose( $out );
+    exit;
 }
