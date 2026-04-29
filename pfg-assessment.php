@@ -57,7 +57,12 @@ function pfg_enqueue_assets() {
         'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
         [], '4.4.0', true
     );
-    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js' ], '1.0.0', true );
+    wp_enqueue_script(
+        'html2pdf',
+        'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+        [], '0.10.1', true
+    );
+    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'html2pdf' ], '1.1.0', true );
     wp_localize_script( 'pfg-engine', 'pfgData', [
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         'nonce'   => wp_create_nonce( 'pfg_submit_nonce' ),
@@ -133,8 +138,8 @@ function pfg_render_assessment() {
                             <input type="text" id="pfg-name" name="user_name" placeholder="e.g. Jane Smith" required>
                         </div>
                         <div class="pfg-field">
-                            <label for="pfg-email">Email <span class="req">*</span></label>
-                            <input type="email" id="pfg-email" name="email" placeholder="jane@company.com" required>
+                            <label for="pfg-email">Email <span class="pfg-optional">(optional)</span></label>
+                            <input type="email" id="pfg-email" name="email" placeholder="jane@company.com">
                         </div>
                         <div class="pfg-field">
                             <label for="pfg-company">Company <span class="req">*</span></label>
@@ -148,7 +153,7 @@ function pfg_render_assessment() {
                 </section>
 
                 <section class="pfg-section pfg-assessment">
-                    <h2 class="pfg-section-title">Critical Success Factors</h2>
+                    <h2 class="pfg-section-title">Critical Success Factors (CSF)</h2>
                     <p class="pfg-section-desc">Rate each factor from <strong>1</strong> (Critically Low) to <strong>10</strong> (Excellent). All 10 must be completed.</p>
                     <div class="pfg-csf-list">
                     <?php $i = 1; foreach ( $csfs as $key => $csf ) : ?>
@@ -198,12 +203,16 @@ function pfg_render_assessment() {
                         <small>/ 100</small>
                     </div>
                     <div id="res-tier" class="pfg-tier-badge">&#8211;</div>
+                    <p id="res-interpretation" class="pfg-interpretation-text"></p>
                 </div>
                 <div class="pfg-chart-wrap">
                     <canvas id="pfg-chart"></canvas>
                 </div>
             </div>
-            <button id="pfg-retake-btn" class="pfg-btn-secondary">Take Assessment Again</button>
+            <div class="pfg-results-actions">
+                <button id="pfg-pdf-btn" class="pfg-btn-primary" style="width:auto;padding:0.75rem 2rem;">&#8595; Download PDF Report</button>
+                <button id="pfg-retake-btn" class="pfg-btn-secondary">Take Assessment Again</button>
+            </div>
         </div>
 
     </div>
@@ -258,10 +267,19 @@ function pfg_handle_submit() {
     }
 
     wp_send_json_success( [
-        'total'  => $total,
-        'scores' => array_values( $scores ),
-        'tier'   => pfg_get_tier( $total ),
+        'total'          => $total,
+        'scores'         => array_values( $scores ),
+        'tier'           => pfg_get_tier( $total ),
+        'interpretation' => pfg_get_interpretation( $total ),
     ] );
+}
+
+function pfg_get_interpretation( int $score ): string {
+    if ( $score >= 90 ) return 'The team is highly aligned and consistently executing at a high level. Systems, leadership, and behaviors are working well together. Focus on sustaining performance and driving continuous improvement.';
+    if ( $score >= 80 ) return 'The team is performing well with some minor gaps. There is a solid foundation in place, with opportunities to refine and optimize specific areas.';
+    if ( $score >= 70 ) return 'The team is generally functioning, but inconsistencies exist. Certain areas may be limiting overall performance and should be addressed to unlock greater effectiveness.';
+    if ( $score >= 60 ) return 'There are clear gaps in how the team operates. Performance is likely inconsistent, and targeted improvements are needed to strengthen execution and alignment.';
+    return 'Core drivers of performance are not functioning effectively. Immediate focus is required to address foundational issues and stabilize team performance.';
 }
 
 function pfg_get_tier( int $score ): string {
@@ -419,6 +437,117 @@ function pfg_render_admin_page() {
         </div>
     </div>
     <?php
+}
+
+// ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
+add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
+function pfg_render_admin_dashboard() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return '<p class="pfg-login-notice">Access restricted to administrators.</p>';
+    }
+    wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], '1.1.0', true );
+    wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
+        'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+        'nonce'   => wp_create_nonce( 'pfg_dashboard_nonce' ),
+    ] );
+    ob_start();
+    ?>
+    <div id="pfg-dashboard" class="pfg-dash-wrap">
+        <div class="pfg-header">
+            <div class="pfg-logo-mark">GLO</div>
+            <h1 class="pfg-title">Admin Dashboard</h1>
+            <p class="pfg-subtitle">PFG Predictive Index &mdash; Aggregate Results</p>
+        </div>
+
+        <div class="pfg-section" id="pfg-dash-summary">
+            <h2 class="pfg-section-title">Aggregate Averages</h2>
+            <div id="pfg-dash-avg-content"><p style="color:#94a3b8;">Loading&hellip;</p></div>
+        </div>
+
+        <div class="pfg-section">
+            <h2 class="pfg-section-title">Benchmarking &mdash; Average Score by Department</h2>
+            <div style="position:relative;height:320px;">
+                <canvas id="pfg-bench-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="pfg-section">
+            <h2 class="pfg-section-title">Submissions</h2>
+            <div class="pfg-dash-toolbar">
+                <select id="pfg-dash-company"><option value="">All Companies</option></select>
+                <select id="pfg-dash-dept"><option value="">All Departments</option></select>
+                <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.5rem 1.25rem;">Filter</button>
+                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.5rem 1.25rem;">&#8595; Export CSV</button>
+            </div>
+            <div id="pfg-dash-table-wrap" style="overflow-x:auto;margin-top:1rem;"></div>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+add_action( 'wp_ajax_pfg_dashboard_data', 'pfg_ajax_dashboard_data' );
+function pfg_ajax_dashboard_data() {
+    check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Unauthorised.' ] );
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'pfg_assessments';
+
+    $filter_company = isset( $_POST['company'] ) ? sanitize_text_field( wp_unslash( $_POST['company'] ) ) : '';
+    $filter_dept    = isset( $_POST['dept'] )    ? sanitize_text_field( wp_unslash( $_POST['dept'] ) )    : '';
+
+    $where  = 'WHERE 1=1';
+    $params = [];
+    if ( $filter_company ) { $where .= ' AND company = %s';    $params[] = $filter_company; }
+    if ( $filter_dept )    { $where .= ' AND department = %s'; $params[] = $filter_dept; }
+
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
+    if ( $params ) {
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} {$where} ORDER BY submitted_at DESC", ...$params ), ARRAY_A );
+    } else {
+        $rows = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY submitted_at DESC", ARRAY_A );
+    }
+
+    foreach ( $rows as &$row ) {
+        $row['tier'] = pfg_get_tier( (int) $row['total_score'] );
+    }
+    unset( $row );
+
+    $csf_keys = [ 'score_communication', 'score_knowledge', 'score_leadership', 'score_measurement',
+                  'score_morale', 'score_process', 'score_recognition', 'score_resource_qty',
+                  'score_resource_qual', 'score_standards' ];
+
+    $global_avg_total = (float) $wpdb->get_var( "SELECT AVG(total_score) FROM {$table}" );
+    $global_csf_avgs  = [];
+    foreach ( $csf_keys as $col ) {
+        $global_csf_avgs[ $col ] = round( (float) $wpdb->get_var( "SELECT AVG({$col}) FROM {$table}" ), 1 );
+    }
+
+    $depts     = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    $dept_avgs = [];
+    foreach ( $depts as $dept ) {
+        $entry = [ 'department' => $dept, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE department = %s", $dept ) ), 1 ) ];
+        foreach ( $csf_keys as $col ) {
+            $entry[ $col ] = round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG({$col}) FROM {$table} WHERE department = %s", $dept ) ), 1 );
+        }
+        $dept_avgs[] = $entry;
+    }
+
+    $companies   = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
+    $departments = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    // phpcs:enable
+
+    wp_send_json_success( [
+        'rows'             => $rows,
+        'global_avg_total' => round( $global_avg_total, 1 ),
+        'global_csf_avgs'  => $global_csf_avgs,
+        'dept_avgs'        => $dept_avgs,
+        'companies'        => $companies,
+        'departments'      => $departments,
+    ] );
 }
 
 // ─── CSV EXPORT ───────────────────────────────────────────────────────────

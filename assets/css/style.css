@@ -328,7 +328,7 @@ body { font-family: 'Inter', sans-serif; }
     text-align: center;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     width: 100%;
-    max-width: 360px;
+    max-width: 500px;
 }
 
 .pfg-score-label {
@@ -376,7 +376,7 @@ body { font-family: 'Inter', sans-serif; }
 
 .pfg-chart-wrap {
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -413,3 +413,133 @@ body { font-family: 'Inter', sans-serif; }
     border-radius: 20px;
     color: #64748b;
 }
+
+/* Optional field label */
+.pfg-optional {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #94a3b8;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Interpretation text */
+.pfg-interpretation-text {
+    font-size: 0.875rem;
+    color: #475569;
+    line-height: 1.6;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    text-align: left;
+}
+
+/* Results actions row */
+.pfg-results-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0;
+}
+
+/* Reduced header spacing on results screen */
+#pfg-results .pfg-header {
+    margin-bottom: 1.5rem;
+}
+
+/* Dashboard */
+.pfg-dash-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+
+.pfg-dash-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.pfg-dash-toolbar select {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    font-family: 'Inter', sans-serif;
+    color: #1a1a2e;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Averages grid */
+.pfg-dash-avg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.pfg-dash-avg-item {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(240, 180, 41, 0.15);
+    border-radius: 12px;
+    padding: 0.75rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.pfg-dash-avg-total {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.06);
+}
+
+.pfg-dash-avg-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1;
+}
+
+.pfg-dash-avg-total .pfg-dash-avg-num {
+    background: linear-gradient(135deg, #F0B429, #22C55E);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pfg-dash-avg-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Dashboard data table */
+.pfg-dash-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.pfg-dash-table th {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid rgba(240, 180, 41, 0.3);
+    white-space: nowrap;
+}
+
+.pfg-dash-table td {
+    padding: 0.5rem 0.75rem;
+    color: #1a1a2e;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pfg-dash-table tr:hover td { background: rgba(255, 255, 255, 0.6); }

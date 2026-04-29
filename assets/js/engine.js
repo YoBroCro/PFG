@@ -23,6 +23,8 @@
         form.addEventListener('submit', handleSubmit);
         const retakeBtn = document.getElementById('pfg-retake-btn');
         if (retakeBtn) retakeBtn.addEventListener('click', resetForm);
+        const pdfBtn = document.getElementById('pfg-pdf-btn');
+        if (pdfBtn) pdfBtn.addEventListener('click', downloadPDF);
     }
 
     // ── Sliders ───────────────────────────────────────────────────────────
@@ -141,8 +143,27 @@
         resultsEl.style.display = 'block';
         document.getElementById('res-total').textContent = data.total;
         document.getElementById('res-tier').textContent  = data.tier;
+        var interp = document.getElementById('res-interpretation');
+        if (interp) interp.textContent = data.interpretation || '';
         renderChart(data.scores);
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function downloadPDF() {
+        var el = document.getElementById('pfg-results');
+        if (!el || typeof html2pdf === 'undefined') return;
+        var btn = document.getElementById('pfg-pdf-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+        var opt = {
+            margin:       [ 10, 10, 10, 10 ],
+            filename:     'PFG-Assessment-Results.pdf',
+            image:        { type: 'jpeg', quality: 0.97 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(el).save().then(function () {
+            if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }
+        });
     }
 
     function renderChart(scores) {
