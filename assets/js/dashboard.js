@@ -300,29 +300,30 @@
 
         // Build off-screen div with a real canvas for Chart.js
         var div = document.createElement('div');
-        div.style.cssText = 'position:fixed;left:0;top:-9999px;background:white;width:800px;padding:20px;font-family:Arial,sans-serif;color:#1a1a2e;z-index:-1;';
-        div.innerHTML = '<div style="text-align:center;padding-bottom:14px;margin-bottom:18px;border-bottom:2px solid #f1f5f9;">'
-            + '<div style="font-size:22px;font-weight:700;letter-spacing:4px;">GLO</div>'
-            + '<div style="font-size:16px;font-weight:700;margin:4px 0;">PFG Predictive Index</div>'
-            + '<div style="font-size:11px;color:#64748b;">Assessment Report</div>'
+        div.style.cssText = 'position:absolute;left:0;top:0;z-index:-1000;opacity:0.01;pointer-events:none;background:white;width:800px;padding:30px;font-family:Helvetica,Arial,sans-serif;color:#1a1a2e;';
+        div.innerHTML = '<div style="text-align:center;padding-bottom:20px;margin-bottom:20px;border-bottom:2px solid #f1f5f9;">'
+            + '<div style="font-size:26px;font-weight:700;letter-spacing:5px;color:#111827;">GLO</div>'
+            + '<div style="font-size:18px;font-weight:700;margin:5px 0;color:#111827;">PFG Predictive Index</div>'
+            + '<div style="font-size:12px;color:#64748b;">Assessment Report</div>'
             + '</div>'
-            + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#f8fafc;">'
-            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;width:110px;">Name</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.user_name) + '</td></tr>'
-            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Company</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.company) + '</td></tr>'
-            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Department</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.department) + '</td></tr>'
-            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Date</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc((row.submitted_at || '').split(' ')[0]) + '</td></tr>'
+            + '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;background:#f8fafc;border-radius:8px;overflow:hidden;">'
+            + '<tr><td style="padding:10px 15px;font-size:11px;color:#64748b;width:120px;border-bottom:1px solid #e2e8f0;">Name</td><td style="padding:10px 15px;font-weight:600;font-size:13px;border-bottom:1px solid #e2e8f0;">' + esc(row.user_name) + '</td></tr>'
+            + '<tr><td style="padding:10px 15px;font-size:11px;color:#64748b;width:120px;border-bottom:1px solid #e2e8f0;">Company</td><td style="padding:10px 15px;font-weight:600;font-size:13px;border-bottom:1px solid #e2e8f0;">' + esc(row.company) + '</td></tr>'
+            + '<tr><td style="padding:10px 15px;font-size:11px;color:#64748b;width:120px;border-bottom:1px solid #e2e8f0;">Department</td><td style="padding:10px 15px;font-weight:600;font-size:13px;border-bottom:1px solid #e2e8f0;">' + esc(row.department) + '</td></tr>'
+            + '<tr><td style="padding:10px 15px;font-size:11px;color:#64748b;width:120px;">Date</td><td style="padding:10px 15px;font-weight:600;font-size:13px;">' + esc((row.submitted_at || '').split(' ')[0]) + '</td></tr>'
             + '</table>'
-            + '<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;">'
+            + '<div style="display:flex;gap:30px;align-items:flex-start;margin-bottom:30px;">'
             + '<div style="flex:1;">'
-            + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:8px;">CSF Scores</div>'
+            + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;">CSF Scores</div>'
             + '<table style="width:100%;border-collapse:collapse;">' + scoreRows + '</table>'
             + '</div>'
-            + '<div style="flex-shrink:0;"><canvas id="pfg-row-pdf-canvas" width="260" height="260"></canvas></div>'
+            + '<div style="flex-shrink:0;"><canvas id="pfg-row-pdf-canvas" width="300" height="300"></canvas></div>'
             + '</div>'
-            + '<div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:10px;">'
-            + '<div style="font-size:44px;font-weight:700;">' + (row.total_score || '–') + '</div>'
-            + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">/ 100</div>'
-            + '<div style="display:inline-block;padding:5px 20px;border-radius:999px;background:#22C55E;color:#fff;font-weight:600;font-size:12px;">' + esc(row.tier || '') + '</div>'
+            + '<div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;border:1px solid #dcfce7;">'
+            + '<div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:5px;">Aggregate Score</div>'
+            + '<div style="font-size:54px;font-weight:800;color:#166534;line-height:1;">' + (row.total_score || '\u2013') + '</div>'
+            + '<div style="font-size:13px;color:#166534;margin-bottom:12px;font-weight:500;">/ 100</div>'
+            + '<div style="display:inline-block;padding:6px 30px;border-radius:999px;background:#22C55E;color:#fff;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(34,197,94,0.2);">' + esc(row.tier || '') + '</div>'
             + '</div>';
 
         document.body.appendChild(div);
@@ -355,14 +356,15 @@
             html2pdf().set({
                 margin:      [8, 8, 8, 8],
                 filename:    fname,
-                image:       { type: 'jpeg', quality: 0.97 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 800, scrollX: 0, scrollY: 0 },
+                image:       { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
                 jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(div).save().then(function () {
                 tmpChart.destroy();
                 document.body.removeChild(div);
             });
-        }, 600);
+        }, 800);
+
     }
 
     // ── CSV Export ────────────────────────────────────────────────────────
