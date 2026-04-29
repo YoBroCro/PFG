@@ -158,22 +158,31 @@
         var el = document.getElementById('pfg-results');
         if (!el || typeof html2pdf === 'undefined') return;
         var btn = document.getElementById('pfg-pdf-btn');
-        if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+        if (btn) { btn.disabled = true; btn.textContent = 'Generating\u2026'; }
+
+        // Clone into a compact off-screen container.
+        // html2pdf measures DOM height BEFORE transforms, so CSS scale doesn't
+        // reduce page count. A 680px-wide clone forces single-page capture.
+        var clone = el.cloneNode(true);
+        clone.style.cssText = 'position:absolute;left:-9999px;top:0;width:680px;background:#ffffff;padding:20px;box-sizing:border-box;font-family:Inter,Arial,sans-serif;color:#1a1a2e;';
+        var hideEls = clone.querySelectorAll('#pfg-pdf-btn,#pfg-reset-btn,.pfg-results-actions');
+        hideEls.forEach(function(e){ e.style.display='none'; });
+        document.body.appendChild(clone);
+
         setTimeout(function () {
-            el.classList.add('pdf-export-mode');
-            var opt = {
-                margin:       [ 8, 8, 8, 8 ],
-                filename:     'PFG-Assessment-Results.pdf',
-                image:        { type: 'jpeg', quality: 0.97 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(el).save().then(function () {
-                el.classList.remove('pdf-export-mode');
-                if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }
+            html2pdf().set({
+                margin:      [6, 6, 6, 6],
+                filename:    'PFG-Assessment-Results.pdf',
+                image:       { type: 'jpeg', quality: 0.97 },
+                html2canvas: { scale: 1.8, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 680 },
+                jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(clone).save().then(function () {
+                document.body.removeChild(clone);
+                if (btn) { btn.disabled = false; btn.textContent = '\u2193 Download PDF Report'; }
             });
-        }, 300);
+        }, 400);
     }
+
 
     function renderChart(scores) {
         var ctx = document.getElementById('pfg-chart');
