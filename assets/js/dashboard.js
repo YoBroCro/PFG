@@ -264,7 +264,7 @@
             html += '<td>' + esc(row.user_name) + '</td>';
             html += '<td>' + esc(row.company) + '</td>';
             html += '<td>' + esc(row.department) + '</td>';
-            html += '<td>' + esc(row.email || '&#8211;') + '</td>';
+            html += '<td>' + esc(row.email || '-') + '</td>';
             CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;">' + esc(row[k]) + '</td>'; });
             html += '<td style="text-align:center;font-weight:700;">' + esc(row.total_score) + '</td>';
             html += '<td>' + esc(row.tier) + '</td>';

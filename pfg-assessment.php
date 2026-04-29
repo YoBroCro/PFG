@@ -495,7 +495,7 @@ function pfg_render_admin_dashboard() {
                     <input type="date" id="pfg-dash-date-to" class="pfg-dash-select" title="End Date">
                 </span>
                 <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Filter</button>
-                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;">&#8595; Export CSV</button>
+                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;margin-left:auto;">&#8595; Export CSV</button>
             </div>
             <div id="pfg-dash-table-wrap"></div>
         </div>

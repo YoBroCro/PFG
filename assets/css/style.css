@@ -456,7 +456,7 @@ body { font-family: 'Inter', sans-serif; }
 
 /* PDF export: shrink results to fit one page */
 #pfg-results.pdf-export-mode {
-    transform: scale(0.7);
+    transform: scale(0.65);
     transform-origin: top center;
     margin: 0;
     padding: 0;
@@ -482,6 +482,7 @@ body { font-family: 'Inter', sans-serif; }
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
+    margin-bottom: 2rem;
 }
 
 .pfg-dash-select {
