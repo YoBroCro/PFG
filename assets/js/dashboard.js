@@ -36,11 +36,15 @@
 
     // ── Load ─────────────────────────────────────────────────────────────
     function loadData(company, dept) {
+        var dateFrom = (document.getElementById('pfg-dash-date-from') || {}).value || '';
+        var dateTo   = (document.getElementById('pfg-dash-date-to')   || {}).value || '';
         var body = new FormData();
-        body.append('action',  'pfg_dashboard_data');
-        body.append('nonce',   pfgDashData.nonce);
-        body.append('company', company);
-        body.append('dept',    dept);
+        body.append('action',    'pfg_dashboard_data');
+        body.append('nonce',     pfgDashData.nonce);
+        body.append('company',   company);
+        body.append('dept',      dept);
+        body.append('date_from', dateFrom);
+        body.append('date_to',   dateTo);
 
         fetch(pfgDashData.ajaxUrl, { method: 'POST', body: body })
             .then(function (r) { return r.json(); })
@@ -276,56 +280,97 @@
         });
     }
 
-    // ── Step 21: Per-Row PDF (fixed) ──────────────────────────────────────
+    // ── Per-Row PDF (chart via toDataURL) ────────────────────────────────
     function generateRowPDF(row) {
         if (typeof html2pdf === 'undefined') { alert('PDF library not loaded.'); return; }
+
+        // Step 1: Render radar chart off-screen, grab as image data URL
+        var offCanvas       = document.createElement('canvas');
+        offCanvas.width     = 380;
+        offCanvas.height    = 380;
+        offCanvas.style.cssText = 'position:absolute;left:-9999px;top:0;';
+        document.body.appendChild(offCanvas);
+
+        var chartValues = CSF_KEYS.map(function (k) { return parseFloat(row[k]) || 0; });
+        var tmpChart    = new Chart(offCanvas, {
+            type: 'radar',
+            data: {
+                labels: CSF_LABELS,
+                datasets: [{
+                    data:                 chartValues,
+                    backgroundColor:      'rgba(34,197,94,0.15)',
+                    borderColor:          'rgba(34,197,94,0.85)',
+                    pointBackgroundColor: '#F0B429',
+                    borderWidth: 2,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                animation:   { duration: 0 },
+                responsive:  false,
+                plugins:     { legend: { display: false } },
+                scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, backdropColor: 'transparent' } } }
+            }
+        });
+        var chartDataURL = offCanvas.toDataURL('image/png');
+        tmpChart.destroy();
+        document.body.removeChild(offCanvas);
+
+        // Step 2: Build HTML with <img> chart
         var csf_full = [
             'Communication', 'Knowledge & Skills', 'Leadership', 'Measurement', 'Morale',
             'Process & Procedure', 'Recognition', 'Resource (Quantity)', 'Resource (Quality)', 'Standards'
         ];
         var scoreRows = '';
         CSF_KEYS.forEach(function (k, i) {
-            scoreRows += '<tr><td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">' + csf_full[i] + '</td>'
-                + '<td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:600;">'
-                + (row[k] || '–') + ' / 10</td></tr>';
+            scoreRows += '<tr>'
+                + '<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;">' + csf_full[i] + '</td>'
+                + '<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:600;font-size:12px;">' + (row[k] || '–') + ' / 10</td>'
+                + '</tr>';
         });
-        var content = '<div style="font-family:Arial,sans-serif;padding:32px;width:580px;background:#fff;color:#1a1a2e;">'
-            + '<div style="text-align:center;margin-bottom:24px;border-bottom:2px solid #f1f5f9;padding-bottom:16px;">'
-            + '<div style="font-size:24px;font-weight:700;letter-spacing:4px;color:#1a1a2e;">GLO</div>'
-            + '<h1 style="font-size:18px;font-weight:700;margin:4px 0;color:#1a1a2e;">PFG Predictive Index</h1>'
-            + '<p style="color:#64748b;font-size:12px;margin:0;">Assessment Report</p>'
+
+        var content = '<div style="font-family:Arial,sans-serif;width:580px;background:#fff;color:#1a1a2e;padding:28px;">'
+            + '<div style="text-align:center;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid #f1f5f9;">'
+            + '<div style="font-size:22px;font-weight:700;letter-spacing:4px;">GLO</div>'
+            + '<div style="font-size:16px;font-weight:700;margin:4px 0;">PFG Predictive Index</div>'
+            + '<div style="font-size:11px;color:#64748b;">Assessment Report</div>'
             + '</div>'
-            + '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;background:#f8fafc;">'
-            + '<tr><td style="padding:7px 12px;font-size:12px;color:#64748b;width:120px;">Name</td><td style="padding:7px 12px;font-weight:600;">' + esc(row.user_name) + '</td></tr>'
-            + '<tr><td style="padding:7px 12px;font-size:12px;color:#64748b;">Company</td><td style="padding:7px 12px;font-weight:600;">' + esc(row.company) + '</td></tr>'
-            + '<tr><td style="padding:7px 12px;font-size:12px;color:#64748b;">Department</td><td style="padding:7px 12px;font-weight:600;">' + esc(row.department) + '</td></tr>'
-            + '<tr><td style="padding:7px 12px;font-size:12px;color:#64748b;">Date</td><td style="padding:7px 12px;font-weight:600;">' + esc((row.submitted_at || '').split(' ')[0]) + '</td></tr>'
+            + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#f8fafc;">'
+            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;width:110px;">Name</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.user_name) + '</td></tr>'
+            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Company</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.company) + '</td></tr>'
+            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Department</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc(row.department) + '</td></tr>'
+            + '<tr><td style="padding:7px 10px;font-size:11px;color:#64748b;">Date</td><td style="padding:7px 10px;font-weight:600;font-size:12px;">' + esc((row.submitted_at || '').split(' ')[0]) + '</td></tr>'
             + '</table>'
-            + '<h2 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:8px;">CSF Scores</h2>'
-            + '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">' + scoreRows + '</table>'
-            + '<div style="text-align:center;padding:20px;background:#f0fdf4;border-radius:12px;">'
-            + '<div style="font-size:48px;font-weight:700;color:#1a1a2e;">' + (row.total_score || '–') + '</div>'
-            + '<div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">/ 100</div>'
-            + '<div style="display:inline-block;padding:6px 24px;border-radius:999px;background:#22C55E;color:#fff;font-weight:600;font-size:13px;">' + esc(row.tier || '') + '</div>'
+            + '<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;">'
+            + '<div style="flex:1;">'
+            + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:8px;">CSF Scores</div>'
+            + '<table style="width:100%;border-collapse:collapse;">' + scoreRows + '</table>'
+            + '</div>'
+            + '<div style="flex-shrink:0;"><img src="' + chartDataURL + '" width="200" height="200" style="display:block;"></div>'
+            + '</div>'
+            + '<div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:10px;">'
+            + '<div style="font-size:44px;font-weight:700;">' + (row.total_score || '–') + '</div>'
+            + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">/ 100</div>'
+            + '<div style="display:inline-block;padding:5px 20px;border-radius:999px;background:#22C55E;color:#fff;font-weight:600;font-size:12px;">' + esc(row.tier || '') + '</div>'
             + '</div></div>';
 
+        // Step 3: Attach visible temp div, capture, destroy
         var tmp = document.createElement('div');
-        tmp.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;background:#fff;';
+        tmp.style.cssText = 'position:fixed;top:0;left:0;width:600px;background:#fff;z-index:99999;';
         tmp.innerHTML = content;
         document.body.appendChild(tmp);
 
         var fname = 'PFG-' + (row.user_name || 'Report').replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
-        setTimeout(function () {
-            html2pdf().set({
-                margin:      [8, 8, 8, 8],
-                filename:    fname,
-                image:       { type: 'jpeg', quality: 0.97 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(tmp).save().then(function () {
-                document.body.removeChild(tmp);
-            });
-        }, 150);
+        html2pdf().set({
+            margin:      [8, 8, 8, 8],
+            filename:    fname,
+            image:       { type: 'jpeg', quality: 0.97 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+            jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] }
+        }).from(tmp).save().then(function () {
+            document.body.removeChild(tmp);
+        });
     }
 
     // ── CSV Export ────────────────────────────────────────────────────────

@@ -490,6 +490,8 @@ function pfg_render_admin_dashboard() {
             <div class="pfg-dash-toolbar">
                 <select id="pfg-dash-company" class="pfg-dash-select"><option value="">All Companies</option></select>
                 <select id="pfg-dash-dept" class="pfg-dash-select"><option value="">All Departments</option></select>
+                <input type="date" id="pfg-dash-date-from" class="pfg-dash-select" title="Start Date">
+                <input type="date" id="pfg-dash-date-to" class="pfg-dash-select" title="End Date">
                 <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Filter</button>
                 <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;">&#8595; Export CSV</button>
             </div>
@@ -511,13 +513,17 @@ function pfg_ajax_dashboard_data() {
     global $wpdb;
     $table = $wpdb->prefix . 'pfg_assessments';
 
-    $filter_company = isset( $_POST['company'] ) ? sanitize_text_field( wp_unslash( $_POST['company'] ) ) : '';
-    $filter_dept    = isset( $_POST['dept'] )    ? sanitize_text_field( wp_unslash( $_POST['dept'] ) )    : '';
+    $filter_company   = isset( $_POST['company'] )   ? sanitize_text_field( wp_unslash( $_POST['company'] ) )   : '';
+    $filter_dept      = isset( $_POST['dept'] )      ? sanitize_text_field( wp_unslash( $_POST['dept'] ) )      : '';
+    $filter_date_from = isset( $_POST['date_from'] ) ? sanitize_text_field( wp_unslash( $_POST['date_from'] ) ) : '';
+    $filter_date_to   = isset( $_POST['date_to'] )   ? sanitize_text_field( wp_unslash( $_POST['date_to'] ) )   : '';
 
     $where  = 'WHERE 1=1';
     $params = [];
-    if ( $filter_company ) { $where .= ' AND company = %s';    $params[] = $filter_company; }
-    if ( $filter_dept )    { $where .= ' AND department = %s'; $params[] = $filter_dept; }
+    if ( $filter_company )   { $where .= ' AND company = %s';                          $params[] = $filter_company; }
+    if ( $filter_dept )      { $where .= ' AND department = %s';                       $params[] = $filter_dept; }
+    if ( $filter_date_from ) { $where .= ' AND DATE(submitted_at) >= %s';              $params[] = $filter_date_from; }
+    if ( $filter_date_to )   { $where .= ' AND DATE(submitted_at) <= %s';              $params[] = $filter_date_to; }
 
     // phpcs:disable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared
     if ( $params ) {

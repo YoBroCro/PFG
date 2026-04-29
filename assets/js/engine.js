@@ -161,11 +161,12 @@
         if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
         setTimeout(function () {
             var opt = {
-                margin:       [ 10, 10, 10, 10 ],
+                margin:       [ 12, 12, 12, 12 ],
                 filename:     'PFG-Assessment-Results.pdf',
                 image:        { type: 'jpeg', quality: 0.97 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
             };
             html2pdf().set(opt).from(el).save().then(function () {
                 if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }

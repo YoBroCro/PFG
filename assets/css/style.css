@@ -319,6 +319,7 @@ body { font-family: 'Inter', sans-serif; }
     align-items: center;
     gap: 1.5rem;
     margin-bottom: 1.5rem;
+    page-break-inside: avoid;
 }
 
 .pfg-score-card {
