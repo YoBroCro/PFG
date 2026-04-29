@@ -475,53 +475,97 @@ body { font-family: 'Inter', sans-serif; }
 
 .pfg-dash-select:focus { border-color: #22C55E; }
 
-/* Averages grid */
-.pfg-avg-grid {
+/* Averages layout */
+.pfg-avg-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
+    grid-template-columns: 280px 1fr;
+    gap: 1.5rem;
+    align-items: start;
 }
 
-.pfg-avg-card {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(240, 180, 41, 0.18);
-    border-radius: 12px;
-    padding: 14px 12px;
+@media (max-width: 680px) {
+    .pfg-avg-layout { grid-template-columns: 1fr; }
+}
+
+.pfg-avg-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Hero total metric */
+.pfg-avg-hero {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    border-radius: 16px;
+    padding: 1.5rem;
     text-align: center;
 }
 
-.pfg-avg-card--highlight {
-    border-color: rgba(34, 197, 94, 0.35);
-    background: rgba(34, 197, 94, 0.06);
-}
-
-.pfg-avg-num {
-    font-size: 1.5rem;
+.pfg-avg-hero-num {
+    font-size: 3.5rem;
     font-weight: 700;
-    color: #1a1a2e;
-    line-height: 1.1;
-    margin-bottom: 6px;
-}
-
-.pfg-avg-card--highlight .pfg-avg-num {
+    line-height: 1;
     background: linear-gradient(135deg, #F0B429, #22C55E);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.pfg-avg-denom {
-    font-size: 0.7rem;
-    font-weight: 400;
+.pfg-avg-hero-denom {
+    font-size: 0.8rem;
     color: #94a3b8;
+    margin-top: 2px;
+    margin-bottom: 6px;
 }
 
-.pfg-avg-label {
-    font-size: 0.65rem;
+.pfg-avg-hero-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+}
+
+/* Radar wrap */
+.pfg-avg-radar-wrap {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+/* 2-col CSF cards */
+.pfg-avg-csf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.pfg-avg-csf-card {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(240, 180, 41, 0.18);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+}
+
+.pfg-avg-csf-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.1;
+}
+
+.pfg-avg-csf-label {
+    font-size: 0.62rem;
     font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    margin-top: 4px;
     line-height: 1.3;
 }
 

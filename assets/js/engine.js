@@ -80,6 +80,7 @@
         var submitBtn = document.getElementById('pfg-submit-btn');
 
         var name    = form.querySelector('[name="user_name"]').value.trim();
+        var email   = form.querySelector('[name="email"]').value.trim();
         var company = form.querySelector('[name="company"]').value.trim();
         var dept    = form.querySelector('[name="department"]').value.trim();
 
@@ -153,16 +154,18 @@
         if (!el || typeof html2pdf === 'undefined') return;
         var btn = document.getElementById('pfg-pdf-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-        var opt = {
-            margin:       [ 10, 10, 10, 10 ],
-            filename:     'PFG-Assessment-Results.pdf',
-            image:        { type: 'jpeg', quality: 0.97 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(el).save().then(function () {
-            if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }
-        });
+        setTimeout(function () {
+            var opt = {
+                margin:       [ 10, 10, 10, 10 ],
+                filename:     'PFG-Assessment-Results.pdf',
+                image:        { type: 'jpeg', quality: 0.97 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(el).save().then(function () {
+                if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }
+            });
+        }, 300);
     }
 
     function renderChart(scores) {
@@ -187,6 +190,7 @@
                 }]
             },
             options: {
+                animation: { duration: 0 },
                 responsive: true,
                 scales: {
                     r: {

@@ -553,6 +553,12 @@ function pfg_ajax_dashboard_data() {
 
     $companies    = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
     $departments  = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+
+    $company_dept_map = [];
+    foreach ( $companies as $co ) {
+        $company_dept_map[ $co ] = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT department FROM {$table} WHERE company = %s ORDER BY department", $co ) );
+    }
+
     $company_avgs = [];
     foreach ( $companies as $co ) {
         $entry = [ 'company' => $co, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE company = %s", $co ) ), 1 ) ];
@@ -564,13 +570,14 @@ function pfg_ajax_dashboard_data() {
     // phpcs:enable
 
     wp_send_json_success( [
-        'rows'             => $rows,
-        'global_avg_total' => round( $global_avg_total, 1 ),
-        'global_csf_avgs'  => $global_csf_avgs,
-        'dept_avgs'        => $dept_avgs,
-        'company_avgs'     => $company_avgs,
-        'companies'        => $companies,
-        'departments'      => $departments,
+        'rows'              => $rows,
+        'global_avg_total'  => round( $global_avg_total, 1 ),
+        'global_csf_avgs'   => $global_csf_avgs,
+        'dept_avgs'         => $dept_avgs,
+        'company_avgs'      => $company_avgs,
+        'company_dept_map'  => $company_dept_map,
+        'companies'         => $companies,
+        'departments'       => $departments,
     ] );
 }
 
