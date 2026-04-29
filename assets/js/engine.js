@@ -79,10 +79,15 @@
         var form      = e.target;
         var submitBtn = document.getElementById('pfg-submit-btn');
 
-        var name    = form.querySelector('[name="user_name"]').value.trim();
-        var email   = form.querySelector('[name="email"]').value.trim();
-        var company = form.querySelector('[name="company"]').value.trim();
-        var dept    = form.querySelector('[name="department"]').value.trim();
+        var nameEl    = form.querySelector('[name="user_name"]');
+        var emailEl   = form.querySelector('[name="email"]');
+        var companyEl = form.querySelector('[name="company"]');
+        var deptEl    = form.querySelector('[name="department"]');
+
+        var name    = nameEl    ? nameEl.value.trim()    : '';
+        var email   = emailEl   ? emailEl.value.trim()   : '';
+        var company = companyEl ? companyEl.value.trim() : '';
+        var dept    = deptEl    ? deptEl.value.trim()    : '';
 
         if (!name || !company || !dept) {
             showError('Please fill in your name, company, and department.');
