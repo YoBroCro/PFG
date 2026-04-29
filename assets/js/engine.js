@@ -160,15 +160,16 @@
         var btn = document.getElementById('pfg-pdf-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
         setTimeout(function () {
+            el.classList.add('pdf-export-mode');
             var opt = {
-                margin:       [ 12, 12, 12, 12 ],
+                margin:       [ 8, 8, 8, 8 ],
                 filename:     'PFG-Assessment-Results.pdf',
                 image:        { type: 'jpeg', quality: 0.97 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(el).save().then(function () {
+                el.classList.remove('pdf-export-mode');
                 if (btn) { btn.disabled = false; btn.textContent = '↓ Download PDF Report'; }
             });
         }, 300);

@@ -454,6 +454,26 @@ body { font-family: 'Inter', sans-serif; }
     margin-bottom: 1.5rem;
 }
 
+/* PDF export: shrink results to fit one page */
+#pfg-results.pdf-export-mode {
+    transform: scale(0.7);
+    transform-origin: top center;
+    margin: 0;
+    padding: 0;
+}
+
+/* Mobile tooltip: center like a modal */
+@media (max-width: 768px) {
+    .pfg-tooltip-icon::after {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 85vw;
+        z-index: 9999;
+    }
+}
+
 /* ── Dashboard ───────────────────────────────────────────────────────────── */
 .pfg-dash-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
 

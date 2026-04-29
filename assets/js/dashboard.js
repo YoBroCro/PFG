@@ -280,43 +280,10 @@
         });
     }
 
-    // ── Per-Row PDF (chart via toDataURL) ────────────────────────────────
+    // ── Per-Row PDF ───────────────────────────────────────────────────────
     function generateRowPDF(row) {
         if (typeof html2pdf === 'undefined') { alert('PDF library not loaded.'); return; }
 
-        // Step 1: Render radar chart off-screen, grab as image data URL
-        var offCanvas       = document.createElement('canvas');
-        offCanvas.width     = 380;
-        offCanvas.height    = 380;
-        offCanvas.style.cssText = 'position:absolute;left:-9999px;top:0;';
-        document.body.appendChild(offCanvas);
-
-        var chartValues = CSF_KEYS.map(function (k) { return parseFloat(row[k]) || 0; });
-        var tmpChart    = new Chart(offCanvas, {
-            type: 'radar',
-            data: {
-                labels: CSF_LABELS,
-                datasets: [{
-                    data:                 chartValues,
-                    backgroundColor:      'rgba(34,197,94,0.15)',
-                    borderColor:          'rgba(34,197,94,0.85)',
-                    pointBackgroundColor: '#F0B429',
-                    borderWidth: 2,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                animation:   { duration: 0 },
-                responsive:  false,
-                plugins:     { legend: { display: false } },
-                scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, backdropColor: 'transparent' } } }
-            }
-        });
-        var chartDataURL = offCanvas.toDataURL('image/png');
-        tmpChart.destroy();
-        document.body.removeChild(offCanvas);
-
-        // Step 2: Build HTML with <img> chart
         var csf_full = [
             'Communication', 'Knowledge & Skills', 'Leadership', 'Measurement', 'Morale',
             'Process & Procedure', 'Recognition', 'Resource (Quantity)', 'Resource (Quality)', 'Standards'
@@ -329,8 +296,10 @@
                 + '</tr>';
         });
 
-        var content = '<div style="font-family:Arial,sans-serif;width:580px;background:#fff;color:#1a1a2e;padding:28px;">'
-            + '<div style="text-align:center;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid #f1f5f9;">'
+        // Build off-screen div with a real canvas for Chart.js
+        var div = document.createElement('div');
+        div.style.cssText = 'position:absolute;top:-9999px;left:0;background:white;width:800px;padding:20px;font-family:Arial,sans-serif;color:#1a1a2e;';
+        div.innerHTML = '<div style="text-align:center;padding-bottom:14px;margin-bottom:18px;border-bottom:2px solid #f1f5f9;">'
             + '<div style="font-size:22px;font-weight:700;letter-spacing:4px;">GLO</div>'
             + '<div style="font-size:16px;font-weight:700;margin:4px 0;">PFG Predictive Index</div>'
             + '<div style="font-size:11px;color:#64748b;">Assessment Report</div>'
@@ -346,31 +315,52 @@
             + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:8px;">CSF Scores</div>'
             + '<table style="width:100%;border-collapse:collapse;">' + scoreRows + '</table>'
             + '</div>'
-            + '<div style="flex-shrink:0;"><img src="' + chartDataURL + '" width="200" height="200" style="display:block;"></div>'
+            + '<div style="flex-shrink:0;"><canvas id="pfg-row-pdf-canvas" width="260" height="260"></canvas></div>'
             + '</div>'
             + '<div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:10px;">'
             + '<div style="font-size:44px;font-weight:700;">' + (row.total_score || '–') + '</div>'
             + '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">/ 100</div>'
             + '<div style="display:inline-block;padding:5px 20px;border-radius:999px;background:#22C55E;color:#fff;font-weight:600;font-size:12px;">' + esc(row.tier || '') + '</div>'
-            + '</div></div>';
+            + '</div>';
 
-        // Step 3: Attach visible temp div, capture, destroy
-        var tmp = document.createElement('div');
-        tmp.style.cssText = 'position:fixed;top:0;left:0;width:600px;background:#fff;z-index:99999;';
-        tmp.innerHTML = content;
-        document.body.appendChild(tmp);
+        document.body.appendChild(div);
+
+        var chartCanvas = div.querySelector('#pfg-row-pdf-canvas');
+        var chartValues = CSF_KEYS.map(function (k) { return parseFloat(row[k]) || 0; });
+        var tmpChart = new Chart(chartCanvas, {
+            type: 'radar',
+            data: {
+                labels: CSF_LABELS,
+                datasets: [{
+                    data:                 chartValues,
+                    backgroundColor:      'rgba(34,197,94,0.15)',
+                    borderColor:          'rgba(34,197,94,0.85)',
+                    pointBackgroundColor: '#F0B429',
+                    borderWidth: 2,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                animation:  false,
+                responsive: false,
+                plugins:    { legend: { display: false } },
+                scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, backdropColor: 'transparent' } } }
+            }
+        });
 
         var fname = 'PFG-' + (row.user_name || 'Report').replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
-        html2pdf().set({
-            margin:      [8, 8, 8, 8],
-            filename:    fname,
-            image:       { type: 'jpeg', quality: 0.97 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-            jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] }
-        }).from(tmp).save().then(function () {
-            document.body.removeChild(tmp);
-        });
+        setTimeout(function () {
+            html2pdf().set({
+                margin:      [8, 8, 8, 8],
+                filename:    fname,
+                image:       { type: 'jpeg', quality: 0.97 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(div).save().then(function () {
+                tmpChart.destroy();
+                document.body.removeChild(div);
+            });
+        }, 150);
     }
 
     // ── CSV Export ────────────────────────────────────────────────────────
