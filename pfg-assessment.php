@@ -51,7 +51,7 @@ function pfg_enqueue_assets() {
         'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
         [], null
     );
-    wp_enqueue_style( 'pfg-style', PFG_PLUGIN_URL . 'assets/css/style.css', [], '1.0.0' );
+    wp_enqueue_style( 'pfg-style', PFG_PLUGIN_URL . 'assets/css/style.css', [], time() );
     wp_enqueue_script(
         'chart-js',
         'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
@@ -62,7 +62,7 @@ function pfg_enqueue_assets() {
         'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
         [], '0.10.1', true
     );
-    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'html2pdf' ], '1.1.0', true );
+    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'html2pdf' ], time(), true );
     wp_localize_script( 'pfg-engine', 'pfgData', [
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         'nonce'   => wp_create_nonce( 'pfg_submit_nonce' ),
@@ -445,7 +445,7 @@ function pfg_render_admin_dashboard() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return '<p class="pfg-login-notice">Access restricted to administrators.</p>';
     }
-    wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], '1.1.0', true );
+    wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         'nonce'   => wp_create_nonce( 'pfg_dashboard_nonce' ),
