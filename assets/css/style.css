@@ -314,8 +314,8 @@ body { font-family: 'Inter', sans-serif; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .pfg-score-card {
@@ -329,6 +329,7 @@ body { font-family: 'Inter', sans-serif; }
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     width: 100%;
     max-width: 500px;
+    box-sizing: border-box;
 }
 
 .pfg-score-label {
@@ -377,6 +378,7 @@ body { font-family: 'Inter', sans-serif; }
 .pfg-chart-wrap {
     width: 100%;
     max-width: 500px;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -448,17 +450,17 @@ body { font-family: 'Inter', sans-serif; }
     margin-bottom: 1.5rem;
 }
 
-/* Dashboard */
+/* ── Dashboard ───────────────────────────────────────────────────────────── */
 .pfg-dash-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
 
 .pfg-dash-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 12px;
     align-items: center;
 }
 
-.pfg-dash-toolbar select {
+.pfg-dash-select {
     background: rgba(255, 255, 255, 0.45);
     border: 1px solid rgba(100, 116, 139, 0.3);
     border-radius: 10px;
@@ -468,78 +470,130 @@ body { font-family: 'Inter', sans-serif; }
     color: #1a1a2e;
     outline: none;
     cursor: pointer;
+    transition: border-color 0.2s;
 }
+
+.pfg-dash-select:focus { border-color: #22C55E; }
 
 /* Averages grid */
-.pfg-dash-avg-grid {
+.pfg-avg-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
 }
 
-.pfg-dash-avg-item {
+.pfg-avg-card {
     background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(240, 180, 41, 0.15);
+    border: 1px solid rgba(240, 180, 41, 0.18);
     border-radius: 12px;
-    padding: 0.75rem;
+    padding: 14px 12px;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
 }
 
-.pfg-dash-avg-total {
-    border-color: rgba(34, 197, 94, 0.3);
+.pfg-avg-card--highlight {
+    border-color: rgba(34, 197, 94, 0.35);
     background: rgba(34, 197, 94, 0.06);
 }
 
-.pfg-dash-avg-num {
-    font-size: 1.4rem;
+.pfg-avg-num {
+    font-size: 1.5rem;
     font-weight: 700;
     color: #1a1a2e;
-    line-height: 1;
+    line-height: 1.1;
+    margin-bottom: 6px;
 }
 
-.pfg-dash-avg-total .pfg-dash-avg-num {
+.pfg-avg-card--highlight .pfg-avg-num {
     background: linear-gradient(135deg, #F0B429, #22C55E);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.pfg-dash-avg-label {
+.pfg-avg-denom {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #94a3b8;
+}
+
+.pfg-avg-label {
     font-size: 0.65rem;
     font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    line-height: 1.3;
 }
 
-/* Dashboard data table */
+/* Benchmarking controls */
+.pfg-dash-bench-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pfg-dash-bench-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+}
+
+.pfg-dash-loading {
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+
+/* Dashboard table */
 .pfg-dash-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.8rem;
+    min-width: 900px;
 }
 
 .pfg-dash-table th {
-    background: rgba(255, 255, 255, 0.8);
-    padding: 0.5rem 0.75rem;
+    position: sticky;
+    top: 0;
+    background: rgba(248, 250, 252, 0.95);
+    padding: 10px 12px;
     text-align: left;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    color: #334155;
+    color: #475569;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 2px solid rgba(240, 180, 41, 0.3);
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.35);
     white-space: nowrap;
 }
 
 .pfg-dash-table td {
-    padding: 0.5rem 0.75rem;
+    padding: 9px 12px;
     color: #1a1a2e;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    white-space: nowrap;
 }
 
-.pfg-dash-table tr:hover td { background: rgba(255, 255, 255, 0.6); }
+.pfg-dash-table tbody tr:hover td { background: rgba(255, 255, 255, 0.7); }
+
+/* Per-row PDF button */
+.pfg-pdf-row-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(240, 180, 41, 0.12);
+    border: 1px solid rgba(240, 180, 41, 0.4);
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    line-height: 1;
+}
+
+.pfg-pdf-row-btn:hover {
+    background: rgba(240, 180, 41, 0.25);
+    border-color: #F0B429;
+}

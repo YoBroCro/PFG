@@ -80,12 +80,11 @@
         var submitBtn = document.getElementById('pfg-submit-btn');
 
         var name    = form.querySelector('[name="user_name"]').value.trim();
-        var email   = form.querySelector('[name="email"]').value.trim();
         var company = form.querySelector('[name="company"]').value.trim();
         var dept    = form.querySelector('[name="department"]').value.trim();
 
-        if (!name || !email || !company || !dept) {
-            showError('Please fill in all your information fields.');
+        if (!name || !company || !dept) {
+            showError('Please fill in your name, company, and department.');
             return;
         }
 

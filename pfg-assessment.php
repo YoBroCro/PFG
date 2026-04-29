@@ -453,34 +453,49 @@ function pfg_render_admin_dashboard() {
     ob_start();
     ?>
     <div id="pfg-dashboard" class="pfg-dash-wrap">
+
         <div class="pfg-header">
             <div class="pfg-logo-mark">GLO</div>
             <h1 class="pfg-title">Admin Dashboard</h1>
-            <p class="pfg-subtitle">PFG Predictive Index &mdash; Aggregate Results</p>
+            <p class="pfg-subtitle">PFG Predictive Index &#8212; Aggregate Results</p>
         </div>
 
-        <div class="pfg-section" id="pfg-dash-summary">
-            <h2 class="pfg-section-title">Aggregate Averages</h2>
-            <div id="pfg-dash-avg-content"><p style="color:#94a3b8;">Loading&hellip;</p></div>
-        </div>
-
+        <!-- Aggregate Averages -->
         <div class="pfg-section">
-            <h2 class="pfg-section-title">Benchmarking &mdash; Average Score by Department</h2>
-            <div style="position:relative;height:320px;">
-                <canvas id="pfg-bench-chart"></canvas>
+            <h2 class="pfg-section-title">Aggregate Averages</h2>
+            <div id="pfg-dash-avg-content">
+                <p class="pfg-dash-loading">Loading&#8230;</p>
             </div>
         </div>
 
+        <!-- Benchmarking -->
+        <div class="pfg-section">
+            <h2 class="pfg-section-title">Benchmarking</h2>
+            <p class="pfg-section-desc">Compare a company&#8217;s CSF averages against the global average.</p>
+            <div class="pfg-dash-bench-controls">
+                <label class="pfg-dash-bench-label" for="pfg-bench-co-select">Select Company:</label>
+                <select id="pfg-bench-co-select" class="pfg-dash-select">
+                    <option value="">&#8212; choose a company &#8212;</option>
+                </select>
+            </div>
+            <div id="pfg-bench-chart-wrap" style="position:relative;height:320px;margin-top:1.25rem;">
+                <canvas id="pfg-bench-chart"></canvas>
+            </div>
+            <p id="pfg-bench-placeholder" style="color:#94a3b8;font-size:0.875rem;text-align:center;margin-top:2rem;">Select a company above to view its comparison chart.</p>
+        </div>
+
+        <!-- Submissions -->
         <div class="pfg-section">
             <h2 class="pfg-section-title">Submissions</h2>
             <div class="pfg-dash-toolbar">
-                <select id="pfg-dash-company"><option value="">All Companies</option></select>
-                <select id="pfg-dash-dept"><option value="">All Departments</option></select>
-                <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.5rem 1.25rem;">Filter</button>
-                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.5rem 1.25rem;">&#8595; Export CSV</button>
+                <select id="pfg-dash-company" class="pfg-dash-select"><option value="">All Companies</option></select>
+                <select id="pfg-dash-dept" class="pfg-dash-select"><option value="">All Departments</option></select>
+                <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Filter</button>
+                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;">&#8595; Export CSV</button>
             </div>
-            <div id="pfg-dash-table-wrap" style="overflow-x:auto;margin-top:1rem;"></div>
+            <div id="pfg-dash-table-wrap"></div>
         </div>
+
     </div>
     <?php
     return ob_get_clean();
@@ -536,8 +551,16 @@ function pfg_ajax_dashboard_data() {
         $dept_avgs[] = $entry;
     }
 
-    $companies   = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
-    $departments = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    $companies    = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
+    $departments  = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    $company_avgs = [];
+    foreach ( $companies as $co ) {
+        $entry = [ 'company' => $co, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE company = %s", $co ) ), 1 ) ];
+        foreach ( $csf_keys as $col ) {
+            $entry[ $col ] = round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG({$col}) FROM {$table} WHERE company = %s", $co ) ), 1 );
+        }
+        $company_avgs[] = $entry;
+    }
     // phpcs:enable
 
     wp_send_json_success( [
@@ -545,6 +568,7 @@ function pfg_ajax_dashboard_data() {
         'global_avg_total' => round( $global_avg_total, 1 ),
         'global_csf_avgs'  => $global_csf_avgs,
         'dept_avgs'        => $dept_avgs,
+        'company_avgs'     => $company_avgs,
         'companies'        => $companies,
         'departments'      => $departments,
     ] );
