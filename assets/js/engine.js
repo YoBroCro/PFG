@@ -156,33 +156,78 @@
     }
 
     function downloadPDF() {
-        var el = document.getElementById('pfg-results');
-        if (!el || typeof html2pdf === 'undefined') return;
+        if (typeof html2pdf === 'undefined') { alert('PDF library not loaded.'); return; }
         var btn = document.getElementById('pfg-pdf-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'Generating\u2026'; }
 
-        // Clone into a compact off-screen container.
-        // html2pdf measures DOM height BEFORE transforms, so CSS scale doesn't
-        // reduce page count. A 680px-wide clone forces single-page capture.
-        var clone = el.cloneNode(true);
-        clone.style.cssText = 'position:absolute;left:-9999px;top:0;width:680px;background:#ffffff;padding:20px;box-sizing:border-box;font-family:Inter,Arial,sans-serif;color:#1a1a2e;';
-        var hideEls = clone.querySelectorAll('#pfg-pdf-btn,#pfg-reset-btn,.pfg-results-actions');
-        hideEls.forEach(function(e){ e.style.display='none'; });
-        document.body.appendChild(clone);
+        // Get data from displayed results
+        var name    = (document.getElementById('res-name')  || {}).textContent || '';
+        var company = (document.getElementById('res-company')|| {}).textContent || '';
+        var dept    = (document.getElementById('res-dept')   || {}).textContent || '';
+        var email   = (document.getElementById('res-email')  || {}).textContent || '';
+        var total   = (document.getElementById('res-total')  || {}).textContent || '';
+        var tier    = (document.getElementById('res-tier')   || {}).textContent || '';
+
+        // Extract chart as image (works on the REAL rendered canvas)
+        var chartImg = '';
+        if (pfgChart) {
+            try { chartImg = pfgChart.toBase64Image(); } catch(e) {}
+        }
+
+        // Build CSF score rows
+        var scoreHtml = '';
+        CSF_KEYS.forEach(function(k, i) {
+            var el = document.getElementById('val-' + k);
+            var val = el ? el.textContent : '–';
+            scoreHtml += '<tr>'
+                + '<td style="padding:4px 10px;font-size:11px;border-bottom:1px solid #f1f5f9;">' + CSF_LABELS[i] + '</td>'
+                + '<td style="padding:4px 10px;font-size:11px;font-weight:600;text-align:center;border-bottom:1px solid #f1f5f9;">' + val + ' / 10</td>'
+                + '</tr>';
+        });
+
+        var html = '<div style="font-family:Arial,sans-serif;color:#1a1a2e;padding:24px;background:#fff;width:680px;box-sizing:border-box;">'
+            + '<div style="text-align:center;border-bottom:2px solid #f1f5f9;padding-bottom:12px;margin-bottom:16px;">'
+            + '<div style="font-size:24px;font-weight:700;letter-spacing:4px;">GLO</div>'
+            + '<div style="font-size:15px;font-weight:700;">PFG Predictive Index</div>'
+            + '<div style="font-size:11px;color:#64748b;">Assessment Report</div>'
+            + '</div>'
+            + '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;background:#f8fafc;">'
+            + '<tr><td style="padding:6px 10px;font-size:10px;color:#64748b;width:100px;">Name</td><td style="padding:6px 10px;font-weight:600;font-size:11px;">' + name + '</td></tr>'
+            + '<tr><td style="padding:6px 10px;font-size:10px;color:#64748b;">Company</td><td style="padding:6px 10px;font-weight:600;font-size:11px;">' + company + '</td></tr>'
+            + '<tr><td style="padding:6px 10px;font-size:10px;color:#64748b;">Department</td><td style="padding:6px 10px;font-weight:600;font-size:11px;">' + dept + '</td></tr>'
+            + (email ? '<tr><td style="padding:6px 10px;font-size:10px;color:#64748b;">Email</td><td style="padding:6px 10px;font-weight:600;font-size:11px;">' + email + '</td></tr>' : '')
+            + '</table>'
+            + '<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;">'
+            + '<div style="flex:1;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;margin-bottom:6px;">CSF Scores</div>'
+            + '<table style="width:100%;border-collapse:collapse;">' + scoreHtml + '</table></div>'
+            + (chartImg ? '<div style="flex-shrink:0;"><img src="' + chartImg + '" width="220" height="220" style="display:block;"/></div>' : '')
+            + '</div>'
+            + '<div style="text-align:center;padding:14px;background:#f0fdf4;border-radius:10px;">'
+            + '<div style="font-size:40px;font-weight:700;">' + total + '</div>'
+            + '<div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">/ 100</div>'
+            + '<div style="display:inline-block;padding:4px 18px;border-radius:999px;background:#22C55E;color:#fff;font-weight:600;font-size:11px;">' + tier + '</div>'
+            + '</div>'
+            + '</div>';
+
+        var div = document.createElement('div');
+        div.style.cssText = 'position:absolute;left:-9999px;top:0;';
+        div.innerHTML = html;
+        document.body.appendChild(div);
 
         setTimeout(function () {
             html2pdf().set({
-                margin:      [6, 6, 6, 6],
+                margin:      [5, 5, 5, 5],
                 filename:    'PFG-Assessment-Results.pdf',
                 image:       { type: 'jpeg', quality: 0.97 },
-                html2canvas: { scale: 1.8, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 680 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 680 },
                 jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(clone).save().then(function () {
-                document.body.removeChild(clone);
+            }).from(div.firstChild).save().then(function () {
+                document.body.removeChild(div);
                 if (btn) { btn.disabled = false; btn.textContent = '\u2193 Download PDF Report'; }
             });
-        }, 400);
+        }, 300);
     }
+
 
 
     function renderChart(scores) {

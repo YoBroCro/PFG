@@ -487,15 +487,17 @@ function pfg_render_admin_dashboard() {
         <!-- Submissions -->
         <div class="pfg-section">
             <h2 class="pfg-section-title">Submissions</h2>
-            <div class="pfg-dash-toolbar">
-                <select id="pfg-dash-company" class="pfg-dash-select"><option value="">All Companies</option></select>
-                <select id="pfg-dash-dept" class="pfg-dash-select"><option value="">All Departments</option></select>
-                <span style="display:flex;gap:0.5rem;align-items:center;flex-wrap:nowrap;">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;">
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.75rem;flex:1;">
+                    <select id="pfg-dash-company" class="pfg-dash-select"><option value="">All Companies</option></select>
+                    <select id="pfg-dash-dept" class="pfg-dash-select"><option value="">All Departments</option></select>
                     <input type="date" id="pfg-dash-date-from" class="pfg-dash-select" title="Start Date">
                     <input type="date" id="pfg-dash-date-to" class="pfg-dash-select" title="End Date">
-                </span>
-                <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Filter</button>
-                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;margin-left:auto;">&#8595; Export CSV</button>
+                    <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Filter</button>
+                </div>
+                <div style="flex-shrink:0;">
+                    <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;">&#8595; Export CSV</button>
+                </div>
             </div>
             <div id="pfg-dash-table-wrap"></div>
         </div>
