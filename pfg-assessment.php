@@ -68,16 +68,46 @@ function pfg_enqueue_assets() {
 add_shortcode( 'pfg_assessment', 'pfg_render_assessment' );
 function pfg_render_assessment() {
     $csfs = [
-        'communication' => [ 'label' => 'Communication',       'tip' => 'The effectiveness of information flow across the team and organization.' ],
-        'knowledge'     => [ 'label' => 'Knowledge & Skills',  'tip' => 'The level of expertise and competencies team members currently possess.' ],
-        'leadership'    => [ 'label' => 'Leadership',          'tip' => 'The quality of direction, guidance, and motivation from management.' ],
-        'measurement'   => [ 'label' => 'Measurement',         'tip' => 'The ability to track, monitor, and evaluate key performance metrics.' ],
-        'morale'        => [ 'label' => 'Morale',              'tip' => 'Overall team spirit, engagement, and motivation levels.' ],
-        'process'       => [ 'label' => 'Process & Procedure', 'tip' => 'Clarity and effectiveness of established workflows and operational protocols.' ],
-        'recognition'   => [ 'label' => 'Recognition',         'tip' => 'How well achievements and contributions are acknowledged and rewarded.' ],
-        'resource_qty'  => [ 'label' => 'Resource (Quantity)', 'tip' => 'Whether sufficient personnel and materials are available to meet demands.' ],
-        'resource_qual' => [ 'label' => 'Resource (Quality)',  'tip' => 'Whether personnel and materials meet the required standards of excellence.' ],
-        'standards'     => [ 'label' => 'Standards',           'tip' => 'The clarity and consistent enforcement of performance expectations.' ],
+        'communication' => [
+            'label' => 'Communication',
+            'tip'   => "There's an atmosphere of open communication.\nMy people are informed.\nThere's a two way dialogue between me and team.\nMy department meet on consistent and regular basis.\nMy team members communicate with each other effectively.\nInformation is quickly and clearly dispersed to team.\nInformation is delivered in an effective way.\nInformation is fully understood by team.",
+        ],
+        'knowledge'     => [
+            'label' => 'Knowledge & Skills',
+            'tip'   => 'Team have capacity to do job function and responsibility.',
+        ],
+        'leadership'    => [
+            'label' => 'Leadership',
+            'tip'   => 'How well is the team inspired by you to do "Great" things?',
+        ],
+        'measurement'   => [
+            'label' => 'Measurement',
+            'tip'   => "Tools are in place to quantify the efficiency and effectiveness of department's performance.\nTied to \"Standards\".",
+        ],
+        'morale'        => [
+            'label' => 'Morale',
+            'tip'   => 'The state of mind or spirit de corps of the group as exhibited by confidence, cheerfulness, discipline, belief and willingness to follow superior and goals of the organization; work well with members of the group as well as perform the assigned tasks.',
+        ],
+        'process'       => [
+            'label' => 'Process & Procedure',
+            'tip'   => 'The P&P of the department are in place and clear.',
+        ],
+        'recognition'   => [
+            'label' => 'Recognition',
+            'tip'   => 'How well achievements and contributions are acknowledged and rewarded.',
+        ],
+        'resource_qty'  => [
+            'label' => 'Resource (Quantity)',
+            'tip'   => 'Department is appropriately staffed.',
+        ],
+        'resource_qual' => [
+            'label' => 'Resource (Quality)',
+            'tip'   => 'The team has the mental capacity, attitude and aptitude to learn and perform job functions.',
+        ],
+        'standards'     => [
+            'label' => 'Standards',
+            'tip'   => "Clear written and communicated criterias, requirements and benchmarks to be appraised at a particular level of performance.\n\nStandards include:\n\u{2022} Quality \u{2013} how well the work is performed; accuracy, appearance, usefulness.\n\u{2022} Quantity \u{2013} how much work is produced or a general result to be achieved.\n\u{2022} Timeliness \u{2013} how quickly or by what date the work is produced.\n\u{2022} Cost-Effectiveness \u{2013} dollar savings; working within a budget; reducing unit costs.",
+        ],
     ];
 
     ob_start();
