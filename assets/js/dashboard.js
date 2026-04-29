@@ -1,3 +1,4 @@
+/* PFG Dashboard v2.1 | build 2026-04-30 */
 (function () {
     'use strict';
 
