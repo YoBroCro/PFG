@@ -666,3 +666,47 @@ body { font-family: 'Inter', sans-serif; }
     background: rgba(240, 180, 41, 0.25);
     border-color: #F0B429;
 }
+
+/* Dashboard Toolbar Fix */
+.pfg-dash-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* Error Message */
+.pfg-error {
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* PDF Export Scale Fix */
+.pdf-export-mode {
+    transform: scale(0.60);
+    transform-origin: top center;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+/* Mobile Tooltip Fix */
+@media (max-width: 768px) {
+    .pfg-tooltip-icon::after {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 85vw;
+        max-width: 320px;
+        z-index: 9999;
+    }
+}

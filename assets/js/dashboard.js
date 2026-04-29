@@ -264,7 +264,8 @@
             html += '<td>' + esc(row.user_name) + '</td>';
             html += '<td>' + esc(row.company) + '</td>';
             html += '<td>' + esc(row.department) + '</td>';
-            html += '<td>' + esc(row.email || '-') + '</td>';
+            var emailVal = (row.email && row.email !== '&#8211;') ? row.email : '-';
+            html += '<td>' + esc(emailVal) + '</td>';
             CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;">' + esc(row[k]) + '</td>'; });
             html += '<td style="text-align:center;font-weight:700;">' + esc(row.total_score) + '</td>';
             html += '<td>' + esc(row.tier) + '</td>';
@@ -298,7 +299,7 @@
 
         // Build off-screen div with a real canvas for Chart.js
         var div = document.createElement('div');
-        div.style.cssText = 'position:absolute;top:-9999px;left:0;background:white;width:800px;padding:20px;font-family:Arial,sans-serif;color:#1a1a2e;';
+        div.style.cssText = 'position:absolute;left:-9999px;top:0;background:white;width:800px;padding:20px;font-family:Arial,sans-serif;color:#1a1a2e;';
         div.innerHTML = '<div style="text-align:center;padding-bottom:14px;margin-bottom:18px;border-bottom:2px solid #f1f5f9;">'
             + '<div style="font-size:22px;font-weight:700;letter-spacing:4px;">GLO</div>'
             + '<div style="font-size:16px;font-weight:700;margin:4px 0;">PFG Predictive Index</div>'
@@ -354,7 +355,7 @@
                 margin:      [8, 8, 8, 8],
                 filename:    fname,
                 image:       { type: 'jpeg', quality: 0.97 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 800 },
                 jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(div).save().then(function () {
                 tmpChart.destroy();
