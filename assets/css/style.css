@@ -1,12 +1,15 @@
 /* PFG v2.1 | build 2026-04-30 */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body { overflow-x: hidden; }
+
 body { font-family: 'Inter', sans-serif; }
 
 #pfg-wrap {
     max-width: 800px;
     margin: 2rem auto;
     padding: 0 1rem;
+    overflow-x: hidden;
 }
 
 /* Header */
@@ -476,7 +479,8 @@ body { font-family: 'Inter', sans-serif; }
     left: 50%;
     transform: translateX(-50%);
     width: 90vw;
-    max-width: 420px;
+    max-width: 90vw;
+    box-sizing: border-box;
     background: rgba(26, 26, 46, 0.95);
     color: #fff;
     font-size: 0.78rem;
