@@ -469,14 +469,15 @@ body { font-family: 'Inter', sans-serif; }
     padding: 0;
 }
 
-/* Mobile tooltip: center like a modal */
+/* Mobile tooltip: drop below icon */
 @media (max-width: 768px) {
     .pfg-tooltip-icon::after {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+        position: absolute;
+        top: 30px;
+        left: 0;
+        transform: none;
         width: 85vw;
+        max-width: 320px;
         z-index: 9999;
     }
 }
@@ -710,15 +711,3 @@ input[type="date"].pfg-dash-select {
     height: auto !important;
 }
 
-/* Mobile Tooltip Fix */
-@media (max-width: 768px) {
-    .pfg-tooltip-icon::after {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 85vw;
-        max-width: 320px;
-        z-index: 9999;
-    }
-}
