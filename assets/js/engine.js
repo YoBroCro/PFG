@@ -21,11 +21,34 @@
         const form = document.getElementById('pfg-form');
         if (!form) return;
         initSliders();
+        initMobileTooltips();
         form.addEventListener('submit', handleSubmit);
         const retakeBtn = document.getElementById('pfg-retake-btn');
         if (retakeBtn) retakeBtn.addEventListener('click', resetForm);
         const pdfBtn = document.getElementById('pfg-pdf-btn');
         if (pdfBtn) pdfBtn.addEventListener('click', downloadPDF);
+    }
+
+    function initMobileTooltips() {
+        document.querySelectorAll('.pfg-tooltip-icon').forEach(function (icon) {
+            icon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var rect = icon.getBoundingClientRect();
+                var isActive = icon.classList.contains('pfg-tt-active');
+                document.querySelectorAll('.pfg-tooltip-icon.pfg-tt-active').forEach(function (el) {
+                    el.classList.remove('pfg-tt-active');
+                });
+                if (!isActive) {
+                    icon.style.setProperty('--pfg-tt-top', (rect.top + 30) + 'px');
+                    icon.classList.add('pfg-tt-active');
+                }
+            });
+        });
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.pfg-tooltip-icon.pfg-tt-active').forEach(function (el) {
+                el.classList.remove('pfg-tt-active');
+            });
+        });
     }
 
     // ── Sliders ───────────────────────────────────────────────────────────
