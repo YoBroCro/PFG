@@ -122,9 +122,9 @@ function pfg_render_assessment() {
         <!-- ASSESSMENT FORM -->
         <div id="pfg-form-section">
             <div class="pfg-header">
-                <div class="pfg-logo-mark">GLO</div>
+                <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
                 <h1 class="pfg-title">PFG Predictive Index</h1>
-                <p class="pfg-subtitle">Manager Performance Assessment</p>
+                <p class="pfg-subtitle">Team Performance Diagnostic</p>
             </div>
 
             <form id="pfg-form" novalidate>
@@ -153,7 +153,7 @@ function pfg_render_assessment() {
                 </section>
 
                 <section class="pfg-section pfg-assessment">
-                    <h2 class="pfg-section-title">Critical Success Factors (CSF)</h2>
+                    <h2 class="pfg-section-title">Critical Success Factors (CSF) <span class="pfg-tooltip-icon pfg-csf-def-icon" data-tip="Critical Success Factors (CSFs) are the key organizational capabilities that must be consistently strong for a team to execute effectively and achieve sustained performance. This tool measures how well these factors are functioning today, helping managers identify strengths to leverage and gaps that present opportunities for improvement.">?</span></h2>
                     <p class="pfg-section-desc">Rate each factor from <strong>1</strong> (Critically Low) to <strong>10</strong> (Excellent). All 10 must be completed.</p>
                     <div class="pfg-csf-list">
                     <?php $i = 1; foreach ( $csfs as $key => $csf ) : ?>
@@ -192,7 +192,7 @@ function pfg_render_assessment() {
         <!-- RESULTS SECTION -->
         <div id="pfg-results" style="display:none;">
             <div class="pfg-header">
-                <div class="pfg-logo-mark">GLO</div>
+                <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
                 <h1 class="pfg-title">Assessment Results</h1>
             </div>
             <div class="pfg-results-body">
@@ -442,9 +442,6 @@ function pfg_render_admin_page() {
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return '<p class="pfg-login-notice">Access restricted to administrators.</p>';
-    }
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
@@ -455,7 +452,7 @@ function pfg_render_admin_dashboard() {
     <div id="pfg-dashboard" class="pfg-dash-wrap">
 
         <div class="pfg-header">
-            <div class="pfg-logo-mark">GLO</div>
+            <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
             <h1 class="pfg-title">Admin Dashboard</h1>
             <p class="pfg-subtitle">PFG Predictive Index &#8212; Aggregate Results</p>
         </div>
@@ -510,11 +507,9 @@ function pfg_render_admin_dashboard() {
 }
 
 add_action( 'wp_ajax_pfg_dashboard_data', 'pfg_ajax_dashboard_data' );
+add_action( 'wp_ajax_nopriv_pfg_dashboard_data', 'pfg_ajax_dashboard_data' );
 function pfg_ajax_dashboard_data() {
     check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorised.' ] );
-    }
 
     global $wpdb;
     $table = $wpdb->prefix . 'pfg_assessments';

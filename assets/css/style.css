@@ -17,14 +17,13 @@ body { font-family: 'Inter', sans-serif; }
 
 .pfg-logo-mark {
     display: inline-block;
-    background: linear-gradient(135deg, #F0B429, #22C55E);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 2.5rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.pfg-logo-img {
+    max-height: 100px;
+    width: auto;
+    display: block;
 }
 
 .pfg-title {
@@ -52,12 +51,19 @@ body { font-family: 'Inter', sans-serif; }
 }
 
 .pfg-section-title {
+    display: flex;
+    align-items: center;
     font-size: 1.1rem;
     font-weight: 600;
     color: #1a1a2e;
     margin-bottom: 1.25rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid rgba(240, 180, 41, 0.3);
+}
+
+.pfg-csf-def-icon {
+    margin-left: 10px;
+    background: #64748b;
 }
 
 .pfg-section-desc {
@@ -500,6 +506,11 @@ body { font-family: 'Inter', sans-serif; }
 }
 
 .pfg-dash-select:focus { border-color: #22C55E; }
+
+input[type="date"].pfg-dash-select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+}
 
 /* Averages layout */
 .pfg-avg-layout {
