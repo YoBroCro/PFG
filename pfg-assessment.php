@@ -188,6 +188,7 @@ function pfg_render_assessment() {
                     <span class="btn-loading" style="display:none;">Submitting&#8230;</span>
                 </button>
             </form>
+            <div id="pfg-mobile-tooltip"></div>
         </div>
 
         <!-- RESULTS SECTION -->

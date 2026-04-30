@@ -30,24 +30,24 @@
     }
 
     function initMobileTooltips() {
+        var tip = document.getElementById('pfg-mobile-tooltip');
+        if (!tip) return;
         document.querySelectorAll('.pfg-tooltip-icon').forEach(function (icon) {
             icon.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var rect = icon.getBoundingClientRect();
-                var isActive = icon.classList.contains('pfg-tt-active');
-                document.querySelectorAll('.pfg-tooltip-icon.pfg-tt-active').forEach(function (el) {
-                    el.classList.remove('pfg-tt-active');
-                });
-                if (!isActive) {
-                    icon.style.setProperty('--pfg-tt-top', (rect.top + 30) + 'px');
-                    icon.classList.add('pfg-tt-active');
+                if (tip.dataset.src === icon.dataset.tip && tip.style.display === 'block') {
+                    tip.style.display = 'none';
+                    return;
                 }
+                var rect = icon.getBoundingClientRect();
+                tip.textContent = icon.getAttribute('data-tip');
+                tip.dataset.src = icon.dataset.tip;
+                tip.style.top  = (rect.bottom + window.scrollY + 10) + 'px';
+                tip.style.display = 'block';
             });
         });
         document.addEventListener('click', function () {
-            document.querySelectorAll('.pfg-tooltip-icon.pfg-tt-active').forEach(function (el) {
-                el.classList.remove('pfg-tt-active');
-            });
+            tip.style.display = 'none';
         });
     }
 
