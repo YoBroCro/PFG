@@ -469,15 +469,16 @@ body { font-family: 'Inter', sans-serif; }
     padding: 0;
 }
 
-/* Mobile tooltip: drop below icon */
+/* Mobile tooltip: fixed bottom-center */
 @media (max-width: 768px) {
     .pfg-tooltip-icon::after {
-        position: absolute;
-        top: 30px;
-        left: 0;
-        transform: none;
-        width: 85vw;
-        max-width: 320px;
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        top: auto;
+        transform: translateX(-50%);
+        width: 90vw;
+        max-width: none;
         z-index: 9999;
     }
 }
