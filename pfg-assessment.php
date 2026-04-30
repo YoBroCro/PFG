@@ -64,8 +64,9 @@ function pfg_enqueue_assets() {
     );
     wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'html2pdf' ], time(), true );
     wp_localize_script( 'pfg-engine', 'pfgData', [
-        'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-        'nonce'   => wp_create_nonce( 'pfg_submit_nonce' ),
+        'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+        'nonce'     => wp_create_nonce( 'pfg_submit_nonce' ),
+        'pluginUrl' => PFG_PLUGIN_URL,
     ] );
 }
 
@@ -444,8 +445,9 @@ add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard() {
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
-        'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-        'nonce'   => wp_create_nonce( 'pfg_dashboard_nonce' ),
+        'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+        'nonce'     => wp_create_nonce( 'pfg_dashboard_nonce' ),
+        'pluginUrl' => PFG_PLUGIN_URL,
     ] );
     ob_start();
     ?>

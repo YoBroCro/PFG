@@ -187,7 +187,7 @@
 
         var html = '<div style="font-family:Helvetica,Arial,sans-serif;color:#1a1a2e;padding:30px;background:#ffffff;width:650px;box-sizing:border-box;">'
             + '<div style="text-align:center;border-bottom:2px solid #f1f5f9;padding-bottom:15px;margin-bottom:20px;">'
-            + '<div style="font-size:26px;font-weight:700;letter-spacing:5px;color:#111827;">GLO</div>'
+            + (pfgData.pluginUrl ? '<img src="' + pfgData.pluginUrl + 'assets/images/logo.png" style="max-height:60px;width:auto;display:block;margin:0 auto 8px;" alt="Logo">' : '<div style="font-size:26px;font-weight:700;letter-spacing:5px;color:#111827;">GLO</div>')
             + '<div style="font-size:16px;font-weight:700;color:#111827;">PFG Predictive Index</div>'
             + '<div style="font-size:12px;color:#64748b;">Assessment Report</div>'
             + '</div>'

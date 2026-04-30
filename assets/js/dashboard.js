@@ -302,7 +302,7 @@
         var div = document.createElement('div');
         div.style.cssText = 'position:absolute;left:0;top:0;z-index:-1000;opacity:0.01;pointer-events:none;background:white;width:800px;padding:30px;font-family:Helvetica,Arial,sans-serif;color:#1a1a2e;';
         div.innerHTML = '<div style="text-align:center;padding-bottom:20px;margin-bottom:20px;border-bottom:2px solid #f1f5f9;">'
-            + '<div style="font-size:26px;font-weight:700;letter-spacing:5px;color:#111827;">GLO</div>'
+            + (pfgDashData.pluginUrl ? '<img src="' + pfgDashData.pluginUrl + 'assets/images/logo.png" style="max-height:60px;width:auto;display:block;margin:0 auto 8px;" alt="Logo">' : '<div style="font-size:26px;font-weight:700;letter-spacing:5px;color:#111827;">GLO</div>')
             + '<div style="font-size:18px;font-weight:700;margin:5px 0;color:#111827;">PFG Predictive Index</div>'
             + '<div style="font-size:12px;color:#64748b;">Assessment Report</div>'
             + '</div>'
