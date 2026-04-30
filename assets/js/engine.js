@@ -236,7 +236,7 @@
         var div = document.createElement('div');
         // Use position:absolute at top:0 to stay in-viewport for html2canvas
         // but hidden via opacity and z-index.
-        div.style.cssText = 'position:absolute;left:0;top:0;z-index:-1000;opacity:0.01;pointer-events:none;width:650px;';
+        div.style.cssText = 'position:absolute;left:-9999px;top:0;opacity:1;visibility:visible;pointer-events:none;width:650px;';
         div.innerHTML = html;
         document.body.appendChild(div);
 
@@ -252,7 +252,7 @@
                 document.body.removeChild(div);
                 if (btn) { btn.disabled = false; btn.textContent = '\u2193 Download PDF Report'; }
             });
-        }, 400);
+        }, 1000);
     }
 
 
@@ -280,7 +280,7 @@
                 }]
             },
             options: {
-                animation: { duration: 0 },
+                animation: false,
                 responsive: true,
                 scales: {
                     r: {
