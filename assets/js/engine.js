@@ -188,12 +188,12 @@
         var btn = document.getElementById('pfg-pdf-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'Generating\u2026'; }
 
-        var name    = (document.getElementById('res-name')   || {}).textContent || '';
-        var company = (document.getElementById('res-company') || {}).textContent || '';
-        var dept    = (document.getElementById('res-dept')    || {}).textContent || '';
-        var email   = (document.getElementById('res-email')   || {}).textContent || '';
-        var total   = (document.getElementById('res-total')   || {}).textContent || '';
-        var tier    = (document.getElementById('res-tier')    || {}).textContent || '';
+        var name    = (document.querySelector('[name="user_name"]')  || {}).value || '';
+        var company = (document.querySelector('[name="company"]')    || {}).value || '';
+        var dept    = (document.querySelector('[name="department"]') || {}).value || '';
+        var email   = (document.querySelector('[name="email"]')      || {}).value || '';
+        var total   = (document.getElementById('res-total') || {}).textContent || '';
+        var tier    = (document.getElementById('res-tier')  || {}).textContent || '';
 
         var chartImg = pfgChart ? pfgChart.toBase64Image() : null;
 
