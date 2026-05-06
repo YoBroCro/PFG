@@ -58,11 +58,11 @@ function pfg_enqueue_assets() {
         [], '4.4.0', true
     );
     wp_enqueue_script(
-        'html2pdf',
-        'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
-        [], '0.10.1', true
+        'jspdf',
+        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+        [], '2.5.1', true
     );
-    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'html2pdf' ], time(), true );
+    wp_enqueue_script( 'pfg-engine', PFG_PLUGIN_URL . 'assets/js/engine.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-engine', 'pfgData', [
         'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
         'nonce'     => wp_create_nonce( 'pfg_submit_nonce' ),
@@ -444,7 +444,7 @@ function pfg_render_admin_page() {
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard() {
-    wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js' ], time(), true );
+    wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
         'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
         'nonce'     => wp_create_nonce( 'pfg_dashboard_nonce' ),
@@ -507,6 +507,19 @@ function pfg_render_admin_dashboard() {
     </div>
     <?php
     return ob_get_clean();
+}
+
+add_action( 'wp_ajax_pfg_delete_entry',        'pfg_delete_entry' );
+add_action( 'wp_ajax_nopriv_pfg_delete_entry', 'pfg_delete_entry' );
+function pfg_delete_entry() {
+    check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
+    $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+    if ( ! $id ) { wp_send_json_error( [ 'message' => 'Invalid ID.' ] ); }
+    global $wpdb;
+    $table = $wpdb->prefix . 'pfg_assessments';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $wpdb->delete( $table, [ 'id' => $id ], [ '%d' ] );
+    wp_send_json_success();
 }
 
 add_action( 'wp_ajax_pfg_dashboard_data', 'pfg_ajax_dashboard_data' );
