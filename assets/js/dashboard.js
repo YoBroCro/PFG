@@ -290,7 +290,9 @@
         });
         html += '</tbody>';
         html += '<tfoot><tr style="background:#f0fdf4;font-weight:700;border-top:2px solid #22C55E;">';
-        html += '<td colspan="5" style="text-align:right;padding:6px 8px;color:#64748b;font-style:italic;white-space:nowrap;">Averages</td>';
+        html += '<td></td>';
+        html += '<td style="text-align:left;padding:6px 8px;color:#64748b;white-space:nowrap;">Averages</td>';
+        html += '<td colspan="3"></td>';
         CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;color:#16a34a;">' + avgCSF[k] + '</td>'; });
         html += '<td style="text-align:center;color:#16a34a;">' + avgTotal + '</td>';
         html += '<td colspan="3"></td>';
