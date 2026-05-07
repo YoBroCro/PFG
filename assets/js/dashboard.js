@@ -256,6 +256,19 @@
             wrap.innerHTML = '<p style="color:#94a3b8;font-size:0.875rem;padding:1rem 0;">No submissions found.</p>';
             return;
         }
+
+        // Calculate averages
+        var n = rows.length;
+        var avgTotal = 0;
+        var avgCSF = {};
+        CSF_KEYS.forEach(function (k) { avgCSF[k] = 0; });
+        rows.forEach(function (row) {
+            avgTotal += parseFloat(row.total_score) || 0;
+            CSF_KEYS.forEach(function (k) { avgCSF[k] += parseFloat(row[k]) || 0; });
+        });
+        avgTotal = (avgTotal / n).toFixed(1);
+        CSF_KEYS.forEach(function (k) { avgCSF[k] = (avgCSF[k] / n).toFixed(1); });
+
         var html = '<div style="overflow-x:auto;"><table class="pfg-dash-table"><thead><tr>';
         html += '<th>PDF</th><th>Name</th><th>Company</th><th>Dept</th><th>Email</th>';
         CSF_SHORT.forEach(function (l) { html += '<th>' + l + '</th>'; });
@@ -275,7 +288,14 @@
             html += '<td><button class="pfg-del-row-btn" data-id="' + esc(row.id) + '" title="Delete" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">&#10005;</button></td>';
             html += '</tr>';
         });
-        html += '</tbody></table></div>';
+        html += '</tbody>';
+        html += '<tfoot><tr style="background:#f0fdf4;font-weight:700;border-top:2px solid #22C55E;">';
+        html += '<td colspan="5" style="text-align:right;padding:6px 8px;color:#64748b;font-style:italic;white-space:nowrap;">Averages</td>';
+        CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;color:#16a34a;">' + avgCSF[k] + '</td>'; });
+        html += '<td style="text-align:center;color:#16a34a;">' + avgTotal + '</td>';
+        html += '<td colspan="3"></td>';
+        html += '</tr></tfoot>';
+        html += '</table></div>';
         wrap.innerHTML = html;
         wrap.querySelectorAll('.pfg-pdf-row-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -388,6 +408,13 @@
         doc.roundedRect(W / 2 - 18, y + 22, 36, 5, 2, 2, 'F');
         doc.setFontSize(8).setFont(undefined, 'bold').setTextColor(255, 255, 255);
         doc.text(row.tier || '', W / 2, y + 25.5, { align: 'center' });
+
+        if (row.interpretation) {
+            y += 34;
+            doc.setFontSize(8).setFont(undefined, 'normal').setTextColor(30, 41, 59);
+            var interpLines = doc.splitTextToSize(row.interpretation, W - margin * 2);
+            doc.text(interpLines, margin, y);
+        }
 
         var fname = 'PFG-' + (row.user_name || 'Report').replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
         doc.save(fname);

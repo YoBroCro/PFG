@@ -550,7 +550,8 @@ function pfg_ajax_dashboard_data() {
     }
 
     foreach ( $rows as &$row ) {
-        $row['tier'] = pfg_get_tier( (int) $row['total_score'] );
+        $row['tier']           = pfg_get_tier( (int) $row['total_score'] );
+        $row['interpretation'] = pfg_get_interpretation( (int) $row['total_score'] );
     }
     unset( $row );
 

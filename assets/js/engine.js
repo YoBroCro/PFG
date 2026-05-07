@@ -269,6 +269,14 @@
         doc.setFontSize(8).setFont(undefined, 'bold').setTextColor(255, 255, 255);
         doc.text(tier, W / 2, y + 25.5, { align: 'center' });
 
+        var interp = (document.getElementById('res-interpretation') || {}).textContent || '';
+        if (interp) {
+            y += 34;
+            doc.setFontSize(8).setFont(undefined, 'normal').setTextColor(30, 41, 59);
+            var interpLines = doc.splitTextToSize(interp, W - margin * 2);
+            doc.text(interpLines, margin, y);
+        }
+
         doc.save('PFG-Assessment-Results.pdf');
         if (btn) { btn.disabled = false; btn.textContent = '\u2193 Download PDF Report'; }
     }
