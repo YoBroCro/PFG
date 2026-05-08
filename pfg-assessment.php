@@ -82,22 +82,31 @@ function pfg_handle_client_login() {
 // ─── CLIENT LOGIN SHORTCODE ───────────────────────────────────────────────
 add_shortcode( 'pfg_client_login', 'pfg_render_client_login' );
 function pfg_render_client_login( $atts = [] ) {
-    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
-    $slug     = $atts['company_slug'];
-    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $atts           = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $slug           = $atts['company_slug'];
+    $logo_url       = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $co_name_login  = '';
+    $has_logo_login = false;
     if ( $slug ) {
         global $wpdb;
         $co_table = $wpdb->prefix . 'pfg_companies';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $slug ) );
-        if ( $co_logo ) $logo_url = $co_logo;
+        $co_row = $wpdb->get_row( $wpdb->prepare( "SELECT name, logo_url FROM {$co_table} WHERE slug = %s", $slug ) );
+        if ( $co_row ) {
+            $co_name_login = $co_row->name;
+            if ( $co_row->logo_url ) { $logo_url = $co_row->logo_url; $has_logo_login = true; }
+        }
     }
     ob_start();
     ?>
     <div id="pfg-wrap" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:2rem 1rem;">
         <div style="width:100%;max-width:380px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
             <div style="text-align:center;margin-bottom:1.5rem;">
-                <img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo" style="max-height:60px;max-width:180px;object-fit:contain;margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto;">
+                <?php if ( $slug && ! $has_logo_login && $co_name_login ) : ?>
+                    <span class="pfg-company-name-title" style="display:block;margin-bottom:1rem;"><?php echo esc_html( $co_name_login ); ?></span>
+                <?php elseif ( $has_logo_login || ! $slug ) : ?>
+                    <img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo" style="max-height:60px;max-width:180px;object-fit:contain;margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto;">
+                <?php endif; ?>
                 <h2 style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0 0 0.25rem;">Dashboard Access</h2>
                 <p style="font-size:0.85rem;color:#64748b;margin:0;">Enter your password to continue.</p>
             </div>
@@ -155,16 +164,21 @@ function pfg_enqueue_assets() {
 // ─── SHORTCODE ────────────────────────────────────────────────────────────
 add_shortcode( 'pfg_assessment', 'pfg_render_assessment' );
 function pfg_render_assessment( $atts = [] ) {
-    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
-    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $atts            = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $logo_url        = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $co_name         = '';
+    $has_custom_logo = false;
     if ( $atts['company_slug'] ) {
         global $wpdb;
         $co_table = $wpdb->prefix . 'pfg_companies';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
-        if ( $co_logo ) $logo_url = $co_logo;
+        $co_row = $wpdb->get_row( $wpdb->prepare( "SELECT name, logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
+        if ( $co_row ) {
+            $co_name = $co_row->name;
+            if ( $co_row->logo_url ) { $logo_url = $co_row->logo_url; $has_custom_logo = true; }
+        }
     }
-    wp_add_inline_script( 'pfg-engine', 'if(window.pfgData){pfgData.logoUrl=' . wp_json_encode( $logo_url ) . ';}', 'after' );
+    wp_add_inline_script( 'pfg-engine', 'if(window.pfgData){pfgData.logoUrl=' . wp_json_encode( $has_custom_logo ? $logo_url : '' ) . ';}', 'after' );
     $csfs = [
         'communication' => [
             'label' => 'Communication',
@@ -215,7 +229,13 @@ function pfg_render_assessment( $atts = [] ) {
         <!-- ASSESSMENT FORM -->
         <div id="pfg-form-section">
             <div class="pfg-header">
-                <div class="pfg-logo-mark"><img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo"></div>
+                <div class="pfg-logo-mark">
+                    <?php if ( $atts['company_slug'] && ! $has_custom_logo && $co_name ) : ?>
+                        <span class="pfg-company-name-title"><?php echo esc_html( $co_name ); ?></span>
+                    <?php else : ?>
+                        <img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo">
+                    <?php endif; ?>
+                </div>
                 <h1 class="pfg-title">PFG Predictive Index</h1>
                 <p class="pfg-subtitle">Team Performance Diagnostic</p>
             </div>
@@ -234,10 +254,14 @@ function pfg_render_assessment( $atts = [] ) {
                             <label for="pfg-email">Email <span class="pfg-optional">(optional)</span></label>
                             <input type="email" id="pfg-email" name="email" placeholder="jane@company.com">
                         </div>
+                        <?php if ( $atts['company_slug'] ) : ?>
+                        <input type="hidden" name="company" value="<?php echo esc_attr( $atts['company_slug'] ); ?>">
+                        <?php else : ?>
                         <div class="pfg-field">
                             <label for="pfg-company">Company <span class="req">*</span></label>
                             <input type="text" id="pfg-company" name="company" placeholder="Company name" required>
                         </div>
+                        <?php endif; ?>
                         <div class="pfg-field">
                             <label for="pfg-dept">Department / Unit <span class="req">*</span></label>
                             <input type="text" id="pfg-dept" name="department" placeholder="e.g. Operations" required>
@@ -286,7 +310,13 @@ function pfg_render_assessment( $atts = [] ) {
         <!-- RESULTS SECTION -->
         <div id="pfg-results" style="display:none;">
             <div class="pfg-header">
-                <div class="pfg-logo-mark"><img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo"></div>
+                <div class="pfg-logo-mark">
+                    <?php if ( $atts['company_slug'] && ! $has_custom_logo && $co_name ) : ?>
+                        <span class="pfg-company-name-title"><?php echo esc_html( $co_name ); ?></span>
+                    <?php else : ?>
+                        <img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo">
+                    <?php endif; ?>
+                </div>
                 <h1 class="pfg-title">Assessment Results</h1>
             </div>
             <div class="pfg-results-body">
@@ -337,10 +367,15 @@ function pfg_handle_submit() {
     $total = array_sum( $scores );
 
     global $wpdb;
-    $table  = $wpdb->prefix . 'pfg_assessments';
+    $table       = $wpdb->prefix . 'pfg_assessments';
+    $company_raw = sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) );
+    $co_tbl      = $wpdb->prefix . 'pfg_companies';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $resolved    = $wpdb->get_var( $wpdb->prepare( "SELECT name FROM {$co_tbl} WHERE slug = %s", $company_raw ) );
+    $company     = $resolved ? $resolved : $company_raw;
     $result = $wpdb->insert( $table, [
         'user_name'           => sanitize_text_field( wp_unslash( $_POST['user_name'] ?? '' ) ),
-        'company'             => sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) ),
+        'company'             => $company,
         'department'          => sanitize_text_field( wp_unslash( $_POST['department'] ?? '' ) ),
         'email'               => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
         'score_communication' => $scores['communication'],
@@ -543,13 +578,18 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             return '<script>window.location.href=' . wp_json_encode( home_url( '/' . $cs . '-admin' ) ) . ';</script>';
         }
     }
-    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $logo_url        = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    $co_name_dash    = '';
+    $has_custom_logo_dash = false;
     if ( $atts['company_slug'] ) {
         global $wpdb;
         $co_table = $wpdb->prefix . 'pfg_companies';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
-        if ( $co_logo ) $logo_url = $co_logo;
+        $co_row = $wpdb->get_row( $wpdb->prepare( "SELECT name, logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
+        if ( $co_row ) {
+            $co_name_dash = $co_row->name;
+            if ( $co_row->logo_url ) { $logo_url = $co_row->logo_url; $has_custom_logo_dash = true; }
+        }
     }
     wp_enqueue_media();
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
@@ -565,7 +605,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
     <div id="pfg-dashboard" class="pfg-dash-wrap">
 
         <div class="pfg-header">
-            <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
+            <div class="pfg-logo-mark">
+                <?php if ( $atts['company_slug'] && ! $has_custom_logo_dash && $co_name_dash ) : ?>
+                    <span class="pfg-company-name-title"><?php echo esc_html( $co_name_dash ); ?></span>
+                <?php else : ?>
+                    <img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo">
+                <?php endif; ?>
+            </div>
             <h1 class="pfg-title">Admin Dashboard</h1>
             <p class="pfg-subtitle">PFG Predictive Index &#8212; Aggregate Results</p>
         </div>
@@ -636,6 +682,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         </div>
 
         <!-- Companies -->
+        <?php if ( ! $atts['company_slug'] ) : ?>
         <div class="pfg-section">
             <h2 class="pfg-section-title">Companies</h2>
             <?php
@@ -716,6 +763,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             </form>
             <div id="pfg-co-error" style="display:none;color:#ef4444;margin-top:0.5rem;font-size:0.875rem;"></div>
         </div>
+        <?php endif; ?>
 
     </div>
     <?php
@@ -787,12 +835,23 @@ function pfg_ajax_dashboard_data() {
         $global_csf_avgs[ $col ] = round( (float) $wpdb->get_var( "SELECT AVG({$col}) FROM {$table}" ), 1 );
     }
 
-    $depts     = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    if ( $locked_company ) {
+        $depts = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT department FROM {$table} WHERE company = %s ORDER BY department", $locked_company ) );
+    } else {
+        $depts = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    }
     $dept_avgs = [];
     foreach ( $depts as $dept ) {
-        $entry = [ 'department' => $dept, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE department = %s", $dept ) ), 1 ) ];
-        foreach ( $csf_keys as $col ) {
-            $entry[ $col ] = round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG({$col}) FROM {$table} WHERE department = %s", $dept ) ), 1 );
+        if ( $locked_company ) {
+            $entry = [ 'department' => $dept, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE company = %s AND department = %s", $locked_company, $dept ) ), 1 ) ];
+            foreach ( $csf_keys as $col ) {
+                $entry[ $col ] = round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG({$col}) FROM {$table} WHERE company = %s AND department = %s", $locked_company, $dept ) ), 1 );
+            }
+        } else {
+            $entry = [ 'department' => $dept, 'avg_total' => round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(total_score) FROM {$table} WHERE department = %s", $dept ) ), 1 ) ];
+            foreach ( $csf_keys as $col ) {
+                $entry[ $col ] = round( (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG({$col}) FROM {$table} WHERE department = %s", $dept ) ), 1 );
+            }
         }
         $dept_avgs[] = $entry;
     }
