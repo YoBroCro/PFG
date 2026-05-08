@@ -38,9 +38,19 @@ function pfg_activate() {
         submitted_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)
     ) {$charset};";
+    $sql2 = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}pfg_companies (
+        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        name varchar(100) NOT NULL,
+        slug varchar(100) NOT NULL,
+        logo_url varchar(500) NOT NULL DEFAULT '',
+        created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY slug (slug)
+    ) {$charset};";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $sql );
-    update_option( 'pfg_db_version', '1.0.0' );
+    dbDelta( $sql2 );
+    update_option( 'pfg_db_version', '1.1.0' );
 }
 
 // ─── ENQUEUE ASSETS ───────────────────────────────────────────────────────
@@ -444,6 +454,7 @@ function pfg_render_admin_page() {
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard() {
+    wp_enqueue_media();
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
         'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
@@ -502,6 +513,62 @@ function pfg_render_admin_dashboard() {
                 </div>
             </div>
             <div id="pfg-dash-table-wrap"></div>
+        </div>
+
+        <!-- Companies -->
+        <div class="pfg-section">
+            <h2 class="pfg-section-title">Companies</h2>
+            <?php
+            global $wpdb;
+            $co_table     = $wpdb->prefix . 'pfg_companies';
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $company_list = $wpdb->get_results( "SELECT * FROM {$co_table} ORDER BY name" );
+            ?>
+            <?php if ( $company_list ) : ?>
+            <div style="overflow-x:auto;margin-bottom:1.5rem;">
+            <table class="pfg-dash-table">
+                <thead><tr><th>Logo</th><th>Name</th><th>Slug</th><th>Del</th></tr></thead>
+                <tbody>
+                <?php foreach ( $company_list as $co ) : ?>
+                <tr>
+                    <td style="width:56px;">
+                        <?php if ( $co->logo_url ) : ?>
+                            <img src="<?php echo esc_url( $co->logo_url ); ?>" alt="" style="max-height:36px;max-width:56px;object-fit:contain;">
+                        <?php else : ?>
+                            <span style="color:#94a3b8;font-size:0.75rem;">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?php echo esc_html( $co->name ); ?></td>
+                    <td style="color:#64748b;font-size:0.8rem;"><?php echo esc_html( $co->slug ); ?></td>
+                    <td>
+                        <button class="pfg-del-company-btn" data-id="<?php echo esc_attr( $co->id ); ?>"
+                            style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">&#10005;</button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <?php else : ?>
+            <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:1.5rem;">No companies added yet.</p>
+            <?php endif; ?>
+
+            <form id="pfg-add-company-form" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+                <div class="pfg-field" style="flex:1;min-width:160px;">
+                    <label>Company Name</label>
+                    <input type="text" id="pfg-co-name" placeholder="e.g. Acme Corp" style="width:100%;">
+                </div>
+                <div class="pfg-field" style="flex:1;min-width:200px;">
+                    <label>Logo <span class="pfg-optional">(optional)</span></label>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="hidden" id="pfg-co-logo-url">
+                        <span id="pfg-co-logo-preview" style="font-size:0.75rem;color:#64748b;">No file chosen</span>
+                        <button type="button" id="pfg-co-logo-btn" class="pfg-btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.8rem;width:auto;">Upload Logo</button>
+                    </div>
+                </div>
+                <button type="submit" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Add Company</button>
+            </form>
+            <div id="pfg-co-error" style="display:none;color:#ef4444;margin-top:0.5rem;font-size:0.875rem;"></div>
         </div>
 
     </div>
@@ -603,6 +670,42 @@ function pfg_ajax_dashboard_data() {
         'companies'         => $companies,
         'departments'       => $departments,
     ] );
+}
+
+// ─── COMPANY MANAGEMENT ───────────────────────────────────────────────────
+add_action( 'wp_ajax_pfg_add_company',        'pfg_add_company' );
+add_action( 'wp_ajax_nopriv_pfg_add_company', 'pfg_add_company' );
+function pfg_add_company() {
+    check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
+    $name     = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
+    $logo_url = esc_url_raw( wp_unslash( $_POST['logo_url'] ?? '' ) );
+    if ( ! $name ) { wp_send_json_error( [ 'message' => 'Company name is required.' ] ); }
+    $slug = sanitize_title( $name );
+    global $wpdb;
+    $table  = $wpdb->prefix . 'pfg_companies';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $result = $wpdb->insert( $table, [ 'name' => $name, 'slug' => $slug, 'logo_url' => $logo_url ] );
+    if ( false === $result ) { wp_send_json_error( [ 'message' => 'Could not add company. Name may already exist.' ] ); }
+    wp_send_json_success();
+}
+
+add_action( 'wp_ajax_pfg_delete_company',        'pfg_delete_company' );
+add_action( 'wp_ajax_nopriv_pfg_delete_company', 'pfg_delete_company' );
+function pfg_delete_company() {
+    check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
+    $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+    if ( ! $id ) { wp_send_json_error( [ 'message' => 'Invalid ID.' ] ); }
+    global $wpdb;
+    $co_table  = $wpdb->prefix . 'pfg_companies';
+    $ass_table = $wpdb->prefix . 'pfg_assessments';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $name = $wpdb->get_var( $wpdb->prepare( "SELECT name FROM {$co_table} WHERE id = %d", $id ) );
+    if ( ! $name ) { wp_send_json_error( [ 'message' => 'Company not found.' ] ); }
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery
+    $wpdb->delete( $ass_table, [ 'company' => $name ], [ '%s' ] );
+    $wpdb->delete( $co_table,  [ 'id' => $id ],        [ '%d' ] );
+    // phpcs:enable
+    wp_send_json_success();
 }
 
 // ─── CSV EXPORT ───────────────────────────────────────────────────────────
