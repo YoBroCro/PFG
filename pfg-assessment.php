@@ -53,6 +53,14 @@ function pfg_activate() {
     update_option( 'pfg_db_version', '1.1.0' );
 }
 
+// ─── DB VERSION CHECK ─────────────────────────────────────────────────────
+add_action( 'admin_init', 'pfg_check_db_update' );
+function pfg_check_db_update() {
+    if ( get_option( 'pfg_db_version' ) !== '1.1.0' ) {
+        pfg_activate();
+    }
+}
+
 // ─── BLANK TEMPLATE ───────────────────────────────────────────────────────
 add_filter( 'template_include', 'pfg_blank_template' );
 function pfg_blank_template( $template ) {
@@ -504,6 +512,18 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         <!-- Aggregate Averages -->
         <div class="pfg-section">
             <h2 class="pfg-section-title">Aggregate Averages</h2>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+                <select id="pfg-dash-timeframe" class="pfg-dash-select" style="min-width:160px;">
+                    <option value="all" selected>All Time</option>
+                    <option value="30d">Last 30 Days</option>
+                    <option value="quarter">Last Quarter</option>
+                    <option value="12m">Last 12 Months</option>
+                    <option value="custom">Custom Date Range</option>
+                </select>
+                <input type="date" id="pfg-dash-date-from" class="pfg-dash-select" title="From" style="width:140px;flex-shrink:0;">
+                <input type="date" id="pfg-dash-date-to" class="pfg-dash-select" title="To" style="width:140px;flex-shrink:0;">
+                <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;">Filter</button>
+            </div>
             <div id="pfg-dash-avg-content">
                 <p class="pfg-dash-loading">Loading&#8230;</p>
             </div>
@@ -539,26 +559,14 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         <!-- Submissions -->
         <div class="pfg-section">
             <h2 class="pfg-section-title">Submissions</h2>
-            <div style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1.5rem;">
-                <select id="pfg-dash-company" class="pfg-dash-select" style="width:100%;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:1.5rem;">
+                <select id="pfg-dash-company" class="pfg-dash-select" style="min-width:160px;">
                     <option value="">All Companies</option>
                 </select>
-                <select id="pfg-dash-dept" class="pfg-dash-select" style="width:100%;">
+                <select id="pfg-dash-dept" class="pfg-dash-select" style="min-width:160px;">
                     <option value="">All Departments</option>
                 </select>
-                <select id="pfg-dash-timeframe" class="pfg-dash-select" style="width:100%;">
-                    <option value="all" selected>All Time</option>
-                    <option value="30d">Last 30 Days</option>
-                    <option value="quarter">Last Quarter</option>
-                    <option value="12m">Last 12 Months</option>
-                    <option value="custom">Custom Date Range</option>
-                </select>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <input type="date" id="pfg-dash-date-from" class="pfg-dash-select" title="From" style="width:140px;flex-shrink:0;">
-                    <input type="date" id="pfg-dash-date-to" class="pfg-dash-select" title="To" style="width:140px;flex-shrink:0;">
-                    <button id="pfg-dash-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;">Filter</button>
-                    <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;margin-left:auto;">&#8595; Export CSV</button>
-                </div>
+                <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;margin-left:auto;">&#8595; Export CSV</button>
             </div>
             <div id="pfg-dash-table-wrap"></div>
         </div>
