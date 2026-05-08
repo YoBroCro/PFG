@@ -566,6 +566,9 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                 <select id="pfg-dash-dept" class="pfg-dash-select" style="min-width:160px;">
                     <option value="">All Departments</option>
                 </select>
+                <input type="date" id="pfg-sub-date-from" class="pfg-dash-select" title="From" style="width:140px;flex-shrink:0;">
+                <input type="date" id="pfg-sub-date-to" class="pfg-dash-select" title="To" style="width:140px;flex-shrink:0;">
+                <button id="pfg-sub-filter-btn" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;">Filter</button>
                 <button id="pfg-dash-export-btn" class="pfg-btn-secondary" style="padding:0.55rem 1.25rem;font-size:0.875rem;flex-shrink:0;margin-left:auto;">&#8595; Export CSV</button>
             </div>
             <div id="pfg-dash-table-wrap"></div>
@@ -583,9 +586,17 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             <?php if ( $company_list ) : ?>
             <div style="overflow-x:auto;margin-bottom:1.5rem;">
             <table class="pfg-dash-table">
-                <thead><tr><th>Logo</th><th>Name</th><th>Slug</th><th>Del</th></tr></thead>
+                <thead><tr><th>Logo</th><th>Name</th><th>Slug</th><th>Links &amp; Password</th><th>Del</th></tr></thead>
                 <tbody>
-                <?php foreach ( $company_list as $co ) : ?>
+                <?php foreach ( $company_list as $co ) :
+                    // phpcs:disable WordPress.DB.DirectDatabaseQuery
+                    $assess_post = $wpdb->get_row( $wpdb->prepare( "SELECT ID FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' AND post_status = 'publish' LIMIT 1", $co->slug ) );
+                    $dash_post   = $wpdb->get_row( $wpdb->prepare( "SELECT ID, post_password FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' LIMIT 1", $co->slug . '-dashboard' ) );
+                    // phpcs:enable
+                    $assess_url = $assess_post ? get_permalink( $assess_post->ID ) : '';
+                    $dash_url   = $dash_post   ? get_permalink( $dash_post->ID )   : '';
+                    $dash_pass  = $dash_post   ? $dash_post->post_password         : '';
+                ?>
                 <tr>
                     <td style="width:56px;">
                         <?php if ( $co->logo_url ) : ?>
@@ -596,6 +607,17 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                     </td>
                     <td><?php echo esc_html( $co->name ); ?></td>
                     <td style="color:#64748b;font-size:0.8rem;"><?php echo esc_html( $co->slug ); ?></td>
+                    <td style="white-space:nowrap;">
+                        <?php if ( $assess_url ) : ?>
+                            <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;background:#22C55E;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;">Assessment</a>
+                        <?php endif; ?>
+                        <?php if ( $dash_url ) : ?>
+                            <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;background:#3b82f6;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;">Dashboard</a>
+                        <?php endif; ?>
+                        <?php if ( $dash_pass ) : ?>
+                            <span style="display:block;margin-top:4px;font-size:0.72rem;color:#64748b;">Pass: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <button class="pfg-del-company-btn" data-id="<?php echo esc_attr( $co->id ); ?>"
                             style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">&#10005;</button>

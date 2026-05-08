@@ -31,6 +31,17 @@
                 document.getElementById('pfg-dash-dept').value
             );
         });
+        var subFilterBtn = document.getElementById('pfg-sub-filter-btn');
+        if (subFilterBtn) {
+            subFilterBtn.addEventListener('click', function () {
+                loadData(
+                    slug ? '' : document.getElementById('pfg-dash-company').value,
+                    document.getElementById('pfg-dash-dept').value,
+                    (document.getElementById('pfg-sub-date-from') || {}).value || '',
+                    (document.getElementById('pfg-sub-date-to')   || {}).value || ''
+                );
+            });
+        }
         document.getElementById('pfg-dash-export-btn').addEventListener('click', exportCSV);
 
         var timeframeSel = document.getElementById('pfg-dash-timeframe');
@@ -52,10 +63,10 @@
     });
 
     // ── Load ─────────────────────────────────────────────────────────────
-    function loadData(company, dept) {
-        var slug     = pfgDashData.companySlug || '';
-        var dateFrom = (document.getElementById('pfg-dash-date-from') || {}).value || '';
-        var dateTo   = (document.getElementById('pfg-dash-date-to')   || {}).value || '';
+    function loadData(company, dept, dateFrom, dateTo) {
+        var slug = pfgDashData.companySlug || '';
+        if (dateFrom === undefined) dateFrom = (document.getElementById('pfg-dash-date-from') || {}).value || '';
+        if (dateTo   === undefined) dateTo   = (document.getElementById('pfg-dash-date-to')   || {}).value || '';
         var body = new FormData();
         body.append('action',       'pfg_dashboard_data');
         body.append('nonce',        pfgDashData.nonce);
