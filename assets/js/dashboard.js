@@ -602,6 +602,7 @@
                         var d = res.data || {};
                         var msg = 'Company added!\n\nAssessment URL:\n' + (d.assess_url || 'N/A') +
                                   '\n\nDashboard URL:\n' + (d.dash_url || 'N/A') +
+                                  '\n\nAdmin URL:\n' + (d.admin_url || 'N/A') +
                                   '\n\nDashboard Password: ' + (d.dash_password || 'N/A');
                         alert(msg);
                         location.reload();

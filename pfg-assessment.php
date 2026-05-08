@@ -61,6 +61,61 @@ function pfg_check_db_update() {
     }
 }
 
+// ─── CLIENT LOGIN HANDLER ─────────────────────────────────────────────────
+add_action( 'template_redirect', 'pfg_handle_client_login' );
+function pfg_handle_client_login() {
+    if ( 'POST' !== $_SERVER['REQUEST_METHOD'] || ! isset( $_POST['pfg_login_slug'] ) ) return;
+    $slug = sanitize_text_field( wp_unslash( $_POST['pfg_login_slug'] ) );
+    if ( ! $slug ) return;
+    if ( ! isset( $_POST['pfg_login_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['pfg_login_nonce'] ) ), 'pfg_client_login_' . $slug ) ) return;
+    $password   = isset( $_POST['pfg_login_password'] ) ? wp_unslash( $_POST['pfg_login_password'] ) : '';
+    $admin_page = get_page_by_path( $slug . '-admin' );
+    if ( ! $admin_page ) return;
+    $stored = get_post_meta( $admin_page->ID, '_pfg_dashboard_password', true );
+    if ( $password === $stored ) {
+        setcookie( 'pfg_auth_' . $slug, '1', time() + 8 * HOUR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+        wp_safe_redirect( home_url( '/' . $slug . '-dashboard' ) );
+        exit;
+    }
+}
+
+// ─── CLIENT LOGIN SHORTCODE ───────────────────────────────────────────────
+add_shortcode( 'pfg_client_login', 'pfg_render_client_login' );
+function pfg_render_client_login( $atts = [] ) {
+    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $slug     = $atts['company_slug'];
+    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    if ( $slug ) {
+        global $wpdb;
+        $co_table = $wpdb->prefix . 'pfg_companies';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $slug ) );
+        if ( $co_logo ) $logo_url = $co_logo;
+    }
+    ob_start();
+    ?>
+    <div id="pfg-wrap" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:2rem 1rem;">
+        <div style="width:100%;max-width:380px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo" style="max-height:60px;max-width:180px;object-fit:contain;margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto;">
+                <h2 style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0 0 0.25rem;">Dashboard Access</h2>
+                <p style="font-size:0.85rem;color:#64748b;margin:0;">Enter your password to continue.</p>
+            </div>
+            <form method="post">
+                <?php wp_nonce_field( 'pfg_client_login_' . $slug, 'pfg_login_nonce' ); ?>
+                <input type="hidden" name="pfg_login_slug" value="<?php echo esc_attr( $slug ); ?>">
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">Password</label>
+                    <input type="password" name="pfg_login_password" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #cbd5e1;border-radius:8px;font-size:0.95rem;box-sizing:border-box;outline:none;" autofocus required>
+                </div>
+                <button type="submit" style="width:100%;padding:0.7rem;background:#22C55E;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;letter-spacing:0.01em;">Enter Dashboard</button>
+            </form>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 // ─── BLANK TEMPLATE ───────────────────────────────────────────────────────
 add_filter( 'template_include', 'pfg_blank_template' );
 function pfg_blank_template( $template ) {
@@ -482,6 +537,12 @@ function pfg_render_admin_page() {
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard( $atts = [] ) {
     $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    if ( $atts['company_slug'] ) {
+        $cs = $atts['company_slug'];
+        if ( empty( $_COOKIE[ 'pfg_auth_' . $cs ] ) ) {
+            return '<script>window.location.href=' . wp_json_encode( home_url( '/' . $cs . '-admin' ) ) . ';</script>';
+        }
+    }
     $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
     if ( $atts['company_slug'] ) {
         global $wpdb;
@@ -591,11 +652,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                 <?php foreach ( $company_list as $co ) :
                     // phpcs:disable WordPress.DB.DirectDatabaseQuery
                     $assess_post = $wpdb->get_row( $wpdb->prepare( "SELECT ID FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' AND post_status = 'publish' LIMIT 1", $co->slug ) );
-                    $dash_post   = $wpdb->get_row( $wpdb->prepare( "SELECT ID, post_password FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' LIMIT 1", $co->slug . '-dashboard' ) );
+                    $dash_post   = $wpdb->get_row( $wpdb->prepare( "SELECT ID FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' LIMIT 1", $co->slug . '-dashboard' ) );
+                    $admin_post  = $wpdb->get_row( $wpdb->prepare( "SELECT ID FROM {$wpdb->prefix}posts WHERE post_name = %s AND post_type = 'page' LIMIT 1", $co->slug . '-admin' ) );
                     // phpcs:enable
                     $assess_url = $assess_post ? get_permalink( $assess_post->ID ) : '';
                     $dash_url   = $dash_post   ? get_permalink( $dash_post->ID )   : '';
-                    $dash_pass  = $dash_post   ? $dash_post->post_password         : '';
+                    $admin_url  = $admin_post  ? get_permalink( $admin_post->ID )  : '';
+                    $dash_pass  = $admin_post  ? get_post_meta( $admin_post->ID, '_pfg_dashboard_password', true ) : '';
                 ?>
                 <tr>
                     <td style="width:56px;">
@@ -614,7 +677,9 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                             <?php endif; ?>
                             <?php if ( $dash_url ) : ?>
                                 <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="padding:3px 8px;background:#3b82f6;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Dashboard</a>
-                                <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="padding:3px 8px;background:#6366f1;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Admin</a>
+                            <?php endif; ?>
+                            <?php if ( $admin_url ) : ?>
+                                <a href="<?php echo esc_url( $admin_url ); ?>" target="_blank" style="padding:3px 8px;background:#6366f1;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Admin</a>
                             <?php endif; ?>
                             <?php if ( $dash_pass ) : ?>
                                 <span style="font-size:0.72rem;color:#64748b;white-space:nowrap;">Password: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
@@ -790,22 +855,34 @@ function pfg_add_company() {
         update_post_meta( $assess_id, '_pfg_generated_page', '1' );
     }
 
-    $dash_password = wp_generate_password( 12, false );
     $dash_id = wp_insert_post( [
-        'post_title'    => $name . ' Dashboard',
-        'post_name'     => $slug . '-dashboard',
-        'post_content'  => "[pfg_admin_dashboard company_slug='{$slug}']",
-        'post_status'   => 'publish',
-        'post_type'     => 'page',
-        'post_password' => $dash_password,
+        'post_title'   => $name . ' Dashboard',
+        'post_name'    => $slug . '-dashboard',
+        'post_content' => "[pfg_admin_dashboard company_slug='{$slug}']",
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
     ] );
     if ( $dash_id && ! is_wp_error( $dash_id ) ) {
         update_post_meta( $dash_id, '_pfg_generated_page', '1' );
     }
 
+    $dash_password = wp_generate_password( 12, false );
+    $admin_id = wp_insert_post( [
+        'post_title'   => $name . ' Admin',
+        'post_name'    => $slug . '-admin',
+        'post_content' => "[pfg_client_login company_slug='{$slug}']",
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+    ] );
+    if ( $admin_id && ! is_wp_error( $admin_id ) ) {
+        update_post_meta( $admin_id, '_pfg_generated_page', '1' );
+        update_post_meta( $admin_id, '_pfg_dashboard_password', $dash_password );
+    }
+
     wp_send_json_success( [
         'assess_url'    => ( $assess_id && ! is_wp_error( $assess_id ) ) ? get_permalink( $assess_id ) : '',
         'dash_url'      => ( $dash_id   && ! is_wp_error( $dash_id ) )   ? get_permalink( $dash_id )   : '',
+        'admin_url'     => ( $admin_id  && ! is_wp_error( $admin_id ) )  ? get_permalink( $admin_id )  : '',
         'dash_password' => $dash_password,
     ] );
 }
@@ -823,7 +900,7 @@ function pfg_delete_company() {
     $name = $wpdb->get_var( $wpdb->prepare( "SELECT name FROM {$co_table} WHERE id = %d", $id ) );
     if ( ! $name ) { wp_send_json_error( [ 'message' => 'Company not found.' ] ); }
 
-    foreach ( [ $name, $name . ' Dashboard' ] as $page_title ) {
+    foreach ( [ $name, $name . ' Dashboard', $name . ' Admin' ] as $page_title ) {
         $pages = get_posts( [
             'post_type'   => 'page',
             'post_status' => 'any',
