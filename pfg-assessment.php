@@ -53,6 +53,15 @@ function pfg_activate() {
     update_option( 'pfg_db_version', '1.1.0' );
 }
 
+// ─── BLANK TEMPLATE ───────────────────────────────────────────────────────
+add_filter( 'template_include', 'pfg_blank_template' );
+function pfg_blank_template( $template ) {
+    if ( is_page() && '1' === get_post_meta( get_the_ID(), '_pfg_generated_page', true ) ) {
+        return PFG_PLUGIN_DIR . 'templates/blank-template.php';
+    }
+    return $template;
+}
+
 // ─── ENQUEUE ASSETS ───────────────────────────────────────────────────────
 add_action( 'wp_enqueue_scripts', 'pfg_enqueue_assets' );
 function pfg_enqueue_assets() {
@@ -82,7 +91,17 @@ function pfg_enqueue_assets() {
 
 // ─── SHORTCODE ────────────────────────────────────────────────────────────
 add_shortcode( 'pfg_assessment', 'pfg_render_assessment' );
-function pfg_render_assessment() {
+function pfg_render_assessment( $atts = [] ) {
+    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    if ( $atts['company_slug'] ) {
+        global $wpdb;
+        $co_table = $wpdb->prefix . 'pfg_companies';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
+        if ( $co_logo ) $logo_url = $co_logo;
+    }
+    wp_add_inline_script( 'pfg-engine', 'if(window.pfgData){pfgData.logoUrl=' . wp_json_encode( $logo_url ) . ';}', 'after' );
     $csfs = [
         'communication' => [
             'label' => 'Communication',
@@ -133,7 +152,7 @@ function pfg_render_assessment() {
         <!-- ASSESSMENT FORM -->
         <div id="pfg-form-section">
             <div class="pfg-header">
-                <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
+                <div class="pfg-logo-mark"><img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo"></div>
                 <h1 class="pfg-title">PFG Predictive Index</h1>
                 <p class="pfg-subtitle">Team Performance Diagnostic</p>
             </div>
@@ -204,7 +223,7 @@ function pfg_render_assessment() {
         <!-- RESULTS SECTION -->
         <div id="pfg-results" style="display:none;">
             <div class="pfg-header">
-                <div class="pfg-logo-mark"><img src="<?php echo PFG_PLUGIN_URL; ?>assets/images/logo.png" class="pfg-logo-img" alt="Logo"></div>
+                <div class="pfg-logo-mark"><img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo"></div>
                 <h1 class="pfg-title">Assessment Results</h1>
             </div>
             <div class="pfg-results-body">
@@ -453,13 +472,23 @@ function pfg_render_admin_page() {
 
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
-function pfg_render_admin_dashboard() {
+function pfg_render_admin_dashboard( $atts = [] ) {
+    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $logo_url = PFG_PLUGIN_URL . 'assets/images/logo.png';
+    if ( $atts['company_slug'] ) {
+        global $wpdb;
+        $co_table = $wpdb->prefix . 'pfg_companies';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $co_logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_table} WHERE slug = %s", $atts['company_slug'] ) );
+        if ( $co_logo ) $logo_url = $co_logo;
+    }
     wp_enqueue_media();
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
         'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
         'nonce'     => wp_create_nonce( 'pfg_dashboard_nonce' ),
         'pluginUrl' => PFG_PLUGIN_URL,
+        'logoUrl'   => $logo_url,
     ] );
     ob_start();
     ?>
@@ -686,7 +715,36 @@ function pfg_add_company() {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery
     $result = $wpdb->insert( $table, [ 'name' => $name, 'slug' => $slug, 'logo_url' => $logo_url ] );
     if ( false === $result ) { wp_send_json_error( [ 'message' => 'Could not add company. Name may already exist.' ] ); }
-    wp_send_json_success();
+
+    $assess_id = wp_insert_post( [
+        'post_title'   => $name,
+        'post_name'    => $slug,
+        'post_content' => "[pfg_assessment company_slug='{$slug}']",
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+    ] );
+    if ( $assess_id && ! is_wp_error( $assess_id ) ) {
+        update_post_meta( $assess_id, '_pfg_generated_page', '1' );
+    }
+
+    $dash_password = wp_generate_password( 12, false );
+    $dash_id = wp_insert_post( [
+        'post_title'    => $name . ' Dashboard',
+        'post_name'     => $slug . '-dashboard',
+        'post_content'  => "[pfg_admin_dashboard company_slug='{$slug}']",
+        'post_status'   => 'publish',
+        'post_type'     => 'page',
+        'post_password' => $dash_password,
+    ] );
+    if ( $dash_id && ! is_wp_error( $dash_id ) ) {
+        update_post_meta( $dash_id, '_pfg_generated_page', '1' );
+    }
+
+    wp_send_json_success( [
+        'assess_url'    => ( $assess_id && ! is_wp_error( $assess_id ) ) ? get_permalink( $assess_id ) : '',
+        'dash_url'      => ( $dash_id   && ! is_wp_error( $dash_id ) )   ? get_permalink( $dash_id )   : '',
+        'dash_password' => $dash_password,
+    ] );
 }
 
 add_action( 'wp_ajax_pfg_delete_company',        'pfg_delete_company' );
@@ -701,6 +759,20 @@ function pfg_delete_company() {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery
     $name = $wpdb->get_var( $wpdb->prepare( "SELECT name FROM {$co_table} WHERE id = %d", $id ) );
     if ( ! $name ) { wp_send_json_error( [ 'message' => 'Company not found.' ] ); }
+
+    foreach ( [ $name, $name . ' Dashboard' ] as $page_title ) {
+        $pages = get_posts( [
+            'post_type'   => 'page',
+            'post_status' => 'any',
+            'numberposts' => -1,
+            'title'       => $page_title,
+            'meta_query'  => [ [ 'key' => '_pfg_generated_page', 'value' => '1' ] ],
+        ] );
+        foreach ( $pages as $page ) {
+            wp_delete_post( $page->ID, true );
+        }
+    }
+
     // phpcs:disable WordPress.DB.DirectDatabaseQuery
     $wpdb->delete( $ass_table, [ 'company' => $name ], [ '%s' ] );
     $wpdb->delete( $co_table,  [ 'id' => $id ],        [ '%d' ] );

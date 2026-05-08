@@ -204,7 +204,7 @@
         if (pfgData.pluginUrl && chartImg !== null) {
             try {
                 var logoImg = new Image();
-                logoImg.src = pfgData.pluginUrl + 'assets/images/logo.png';
+                logoImg.src = pfgData.logoUrl || (pfgData.pluginUrl + 'assets/images/logo.png');
                 doc.addImage(logoImg, 'PNG', W / 2 - 20, y, 40, 14);
                 y += 18;
             } catch(e) { /* fallback below */ }

@@ -355,7 +355,7 @@
         if (pfgDashData.pluginUrl) {
             try {
                 var logoImg = new Image();
-                logoImg.src = pfgDashData.pluginUrl + 'assets/images/logo.png';
+                logoImg.src = pfgDashData.logoUrl || (pfgDashData.pluginUrl + 'assets/images/logo.png');
                 doc.addImage(logoImg, 'PNG', W / 2 - 20, y, 40, 14);
                 y += 18;
             } catch(e) {}
@@ -457,8 +457,17 @@
             fetch(pfgDashData.ajaxUrl, { method: 'POST', body: body })
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
-                    if (res.success) { location.reload(); }
-                    else { errEl.textContent = (res.data && res.data.message) || 'Error adding company.'; errEl.style.display = 'block'; }
+                    if (res.success) {
+                        var d = res.data || {};
+                        var msg = 'Company added!\n\nAssessment URL:\n' + (d.assess_url || 'N/A') +
+                                  '\n\nDashboard URL:\n' + (d.dash_url || 'N/A') +
+                                  '\n\nDashboard Password: ' + (d.dash_password || 'N/A');
+                        alert(msg);
+                        location.reload();
+                    } else {
+                        errEl.textContent = (res.data && res.data.message) || 'Error adding company.';
+                        errEl.style.display = 'block';
+                    }
                 });
         });
 
