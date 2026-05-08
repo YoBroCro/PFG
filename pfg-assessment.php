@@ -485,10 +485,11 @@ function pfg_render_admin_dashboard( $atts = [] ) {
     wp_enqueue_media();
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
-        'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-        'nonce'     => wp_create_nonce( 'pfg_dashboard_nonce' ),
-        'pluginUrl' => PFG_PLUGIN_URL,
-        'logoUrl'   => $logo_url,
+        'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+        'nonce'       => wp_create_nonce( 'pfg_dashboard_nonce' ),
+        'pluginUrl'   => PFG_PLUGIN_URL,
+        'logoUrl'     => $logo_url,
+        'companySlug' => $atts['company_slug'],
     ] );
     ob_start();
     ?>
@@ -523,6 +524,17 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             </div>
             <p id="pfg-bench-placeholder" style="color:#94a3b8;font-size:0.875rem;text-align:center;margin-top:2rem;">Select a company above to view its comparison chart.</p>
         </div>
+
+        <!-- Trend Chart (client view only) -->
+        <?php if ( $atts['company_slug'] ) : ?>
+        <div class="pfg-section" id="pfg-trend-section">
+            <h2 class="pfg-section-title">Performance Trend</h2>
+            <p class="pfg-section-desc">Average total score by month.</p>
+            <div style="position:relative;height:240px;">
+                <canvas id="pfg-trend-chart"></canvas>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Submissions -->
         <div class="pfg-section">
@@ -626,10 +638,19 @@ function pfg_ajax_dashboard_data() {
     global $wpdb;
     $table = $wpdb->prefix . 'pfg_assessments';
 
-    $filter_company   = isset( $_POST['company'] )   ? sanitize_text_field( wp_unslash( $_POST['company'] ) )   : '';
-    $filter_dept      = isset( $_POST['dept'] )      ? sanitize_text_field( wp_unslash( $_POST['dept'] ) )      : '';
-    $filter_date_from = isset( $_POST['date_from'] ) ? sanitize_text_field( wp_unslash( $_POST['date_from'] ) ) : '';
-    $filter_date_to   = isset( $_POST['date_to'] )   ? sanitize_text_field( wp_unslash( $_POST['date_to'] ) )   : '';
+    $filter_company      = isset( $_POST['company'] )      ? sanitize_text_field( wp_unslash( $_POST['company'] ) )      : '';
+    $filter_dept         = isset( $_POST['dept'] )         ? sanitize_text_field( wp_unslash( $_POST['dept'] ) )         : '';
+    $filter_date_from    = isset( $_POST['date_from'] )    ? sanitize_text_field( wp_unslash( $_POST['date_from'] ) )    : '';
+    $filter_date_to      = isset( $_POST['date_to'] )      ? sanitize_text_field( wp_unslash( $_POST['date_to'] ) )      : '';
+    $filter_company_slug = isset( $_POST['company_slug'] ) ? sanitize_text_field( wp_unslash( $_POST['company_slug'] ) ) : '';
+
+    $locked_company = '';
+    if ( $filter_company_slug ) {
+        $co_tbl = $wpdb->prefix . 'pfg_companies';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $locked_company = (string) $wpdb->get_var( $wpdb->prepare( "SELECT name FROM {$co_tbl} WHERE slug = %s", $filter_company_slug ) );
+        if ( $locked_company ) $filter_company = $locked_company;
+    }
 
     $where  = 'WHERE 1=1';
     $params = [];
@@ -671,8 +692,10 @@ function pfg_ajax_dashboard_data() {
         $dept_avgs[] = $entry;
     }
 
-    $companies    = $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
-    $departments  = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    $companies   = $locked_company
+        ? [ $locked_company ]
+        : $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
+    $departments = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
 
     $company_dept_map = [];
     foreach ( $companies as $co ) {

@@ -16,38 +16,53 @@
 
     var avgRadarChart = null;
     var benchChart    = null;
+    var trendChart    = null;
     var allData       = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         if (!document.getElementById('pfg-dashboard')) return;
+        var slug = pfgDashData.companySlug || '';
+
         loadData('', '');
 
         document.getElementById('pfg-dash-filter-btn').addEventListener('click', function () {
             loadData(
-                document.getElementById('pfg-dash-company').value,
+                slug ? '' : document.getElementById('pfg-dash-company').value,
                 document.getElementById('pfg-dash-dept').value
             );
         });
         document.getElementById('pfg-dash-export-btn').addEventListener('click', exportCSV);
-        document.getElementById('pfg-bench-co-select').addEventListener('change', onBenchCompanyChange);
 
-        // Cascading: Company → Department
-        document.getElementById('pfg-dash-company').addEventListener('change', onCompanyFilter);
+        if (slug) {
+            var coDrop = document.getElementById('pfg-dash-company');
+            if (coDrop) coDrop.style.display = 'none';
+            var benchControls = document.querySelector('.pfg-dash-bench-controls');
+            if (benchControls) benchControls.style.display = 'none';
+            var benchPh = document.getElementById('pfg-bench-placeholder');
+            if (benchPh) benchPh.textContent = 'Loading department comparison…';
+        } else {
+            var benchSel = document.getElementById('pfg-bench-co-select');
+            if (benchSel) benchSel.addEventListener('change', onBenchCompanyChange);
+            var coDrop2 = document.getElementById('pfg-dash-company');
+            if (coDrop2) coDrop2.addEventListener('change', onCompanyFilter);
+        }
 
         initCompanyManager();
     });
 
     // ── Load ─────────────────────────────────────────────────────────────
     function loadData(company, dept) {
+        var slug     = pfgDashData.companySlug || '';
         var dateFrom = (document.getElementById('pfg-dash-date-from') || {}).value || '';
         var dateTo   = (document.getElementById('pfg-dash-date-to')   || {}).value || '';
         var body = new FormData();
-        body.append('action',    'pfg_dashboard_data');
-        body.append('nonce',     pfgDashData.nonce);
-        body.append('company',   company);
-        body.append('dept',      dept);
-        body.append('date_from', dateFrom);
-        body.append('date_to',   dateTo);
+        body.append('action',       'pfg_dashboard_data');
+        body.append('nonce',        pfgDashData.nonce);
+        body.append('company',      slug ? '' : company);
+        body.append('dept',         dept);
+        body.append('date_from',    dateFrom);
+        body.append('date_to',      dateTo);
+        body.append('company_slug', slug);
 
         fetch(pfgDashData.ajaxUrl, { method: 'POST', body: body })
             .then(function (r) { return r.json(); })
@@ -55,10 +70,14 @@
                 if (!res.success) { alert('Dashboard error: ' + (res.data && res.data.message)); return; }
                 allData = res.data;
                 populateTopFilters(res.data.companies, res.data.departments);
-                if (document.getElementById('pfg-dash-company').value) onCompanyFilter();
-                populateBenchSelect(res.data.companies);
+                if (!slug && document.getElementById('pfg-dash-company').value) onCompanyFilter();
+                if (!slug) populateBenchSelect(res.data.companies);
                 renderAverages(res.data);
                 renderTable(res.data.rows);
+                if (slug) {
+                    renderDeptBenchChart(res.data);
+                    renderTrendChart(res.data.rows);
+                }
             })
             .catch(function () { alert('Network error loading dashboard.'); });
     }
@@ -250,6 +269,89 @@
         });
     }
 
+    // ── Dept Bench Chart (client view) ────────────────────────────────────
+    function renderDeptBenchChart(data) {
+        var wrap = document.getElementById('pfg-bench-chart-wrap');
+        var ph   = document.getElementById('pfg-bench-placeholder');
+        if (!data.dept_avgs || !data.dept_avgs.length) {
+            if (ph) { ph.style.display = 'block'; ph.textContent = 'No department data yet.'; }
+            return;
+        }
+        if (ph)   ph.style.display   = 'none';
+        if (wrap) wrap.style.display = 'block';
+        var ctx = document.getElementById('pfg-bench-chart');
+        if (!ctx) return;
+        if (benchChart) { benchChart.destroy(); benchChart = null; }
+
+        var palette = [
+            'rgba(34,197,94,0.8)', 'rgba(240,180,41,0.8)', 'rgba(59,130,246,0.8)',
+            'rgba(239,68,68,0.8)', 'rgba(168,85,247,0.8)', 'rgba(20,184,166,0.8)'
+        ];
+        var datasets = [];
+        var coAvg = (data.company_avgs && data.company_avgs[0]) || null;
+        if (coAvg) {
+            datasets.push({
+                label: 'Company Avg',
+                data: CSF_KEYS.map(function (k) { return coAvg[k] || 0; }),
+                borderColor: 'rgba(100,116,139,0.9)',
+                backgroundColor: 'rgba(100,116,139,0.08)',
+                borderWidth: 2, borderDash: [4, 3], pointRadius: 3
+            });
+        }
+        data.dept_avgs.forEach(function (dept, i) {
+            var c = palette[i % palette.length];
+            datasets.push({
+                label: dept.department,
+                data: CSF_KEYS.map(function (k) { return dept[k] || 0; }),
+                borderColor: c.replace('0.8', '1'),
+                backgroundColor: c.replace('0.8', '0.1'),
+                borderWidth: 2, pointRadius: 3
+            });
+        });
+        benchChart = new Chart(ctx, {
+            type: 'radar',
+            data: { labels: CSF_LABELS, datasets: datasets },
+            options: {
+                animation: { duration: 0 }, responsive: true, maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: 'rgba(0,0,0,0.07)' }, pointLabels: { font: { size: 9, family: 'Inter' } } } },
+                plugins: { legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 12 } }, tooltip: { callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + c.raw + ' / 10'; } } } }
+            }
+        });
+    }
+
+    // ── Trend Chart (client view) ─────────────────────────────────────────
+    function renderTrendChart(rows) {
+        var ctx = document.getElementById('pfg-trend-chart');
+        if (!ctx) return;
+        if (trendChart) { trendChart.destroy(); trendChart = null; }
+        if (!rows || !rows.length) return;
+        var monthly = {};
+        rows.forEach(function (row) {
+            var month = (row.submitted_at || '').substring(0, 7);
+            if (!month) return;
+            if (!monthly[month]) monthly[month] = { sum: 0, count: 0 };
+            monthly[month].sum   += parseFloat(row.total_score) || 0;
+            monthly[month].count += 1;
+        });
+        var months = Object.keys(monthly).sort();
+        var avgs   = months.map(function (m) { return parseFloat((monthly[m].sum / monthly[m].count).toFixed(1)); });
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{ label: 'Avg Total Score', data: avgs, borderColor: 'rgba(34,197,94,0.9)', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#22C55E', pointRadius: 4, borderWidth: 2 }]
+            },
+            options: {
+                animation: { duration: 0 }, responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, ticks: { stepSize: 20, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, title: { display: true, text: 'Avg Score / 100', font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 } } }
+                },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return ' Avg: ' + c.raw + ' / 100'; } } } }
+            }
+        });
+    }
+
     // ── Table ─────────────────────────────────────────────────────────────
     function renderTable(rows) {
         var wrap = document.getElementById('pfg-dash-table-wrap');
@@ -271,15 +373,18 @@
         avgTotal = (avgTotal / n).toFixed(1);
         CSF_KEYS.forEach(function (k) { avgCSF[k] = (avgCSF[k] / n).toFixed(1); });
 
+        var isClient = !!(pfgDashData && pfgDashData.companySlug);
         var html = '<div style="overflow-x:auto;"><table class="pfg-dash-table"><thead><tr>';
-        html += '<th>PDF</th><th>Name</th><th>Company</th><th>Dept</th><th>Email</th>';
+        html += '<th>PDF</th><th>Name</th>';
+        if (!isClient) html += '<th>Company</th>';
+        html += '<th>Dept</th><th>Email</th>';
         CSF_SHORT.forEach(function (l) { html += '<th>' + l + '</th>'; });
         html += '<th>Total</th><th>Tier</th><th>Date</th><th>Del</th></tr></thead><tbody>';
         rows.forEach(function (row, idx) {
             html += '<tr>';
             html += '<td><button class="pfg-pdf-row-btn" data-idx="' + idx + '" title="Download PDF">&#8595;</button></td>';
             html += '<td>' + esc(row.user_name) + '</td>';
-            html += '<td>' + esc(row.company) + '</td>';
+            if (!isClient) html += '<td>' + esc(row.company) + '</td>';
             html += '<td>' + esc(row.department) + '</td>';
             var emailVal = (row.email && row.email !== '&#8211;') ? row.email : '-';
             html += '<td>' + esc(emailVal) + '</td>';
@@ -294,7 +399,7 @@
         html += '<tfoot><tr style="background:#f0fdf4;font-weight:700;border-top:2px solid #22C55E;">';
         html += '<td></td>';
         html += '<td style="text-align:left;padding:6px 8px;color:#64748b;white-space:nowrap;">Averages</td>';
-        html += '<td colspan="3"></td>';
+        html += isClient ? '<td colspan="2"></td>' : '<td colspan="3"></td>';
         CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;color:#16a34a;">' + avgCSF[k] + '</td>'; });
         html += '<td style="text-align:center;color:#16a34a;">' + avgTotal + '</td>';
         html += '<td colspan="3"></td>';
