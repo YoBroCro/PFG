@@ -607,16 +607,19 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                     </td>
                     <td><?php echo esc_html( $co->name ); ?></td>
                     <td style="color:#64748b;font-size:0.8rem;"><?php echo esc_html( $co->slug ); ?></td>
-                    <td style="white-space:nowrap;">
-                        <?php if ( $assess_url ) : ?>
-                            <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;background:#22C55E;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;">Assessment</a>
-                        <?php endif; ?>
-                        <?php if ( $dash_url ) : ?>
-                            <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;background:#3b82f6;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;">Dashboard</a>
-                        <?php endif; ?>
-                        <?php if ( $dash_pass ) : ?>
-                            <span style="display:block;margin-top:4px;font-size:0.72rem;color:#64748b;">Pass: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
-                        <?php endif; ?>
+                    <td>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <?php if ( $assess_url ) : ?>
+                                <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" style="padding:3px 8px;background:#22C55E;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Assessment</a>
+                            <?php endif; ?>
+                            <?php if ( $dash_url ) : ?>
+                                <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="padding:3px 8px;background:#3b82f6;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Dashboard</a>
+                                <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="padding:3px 8px;background:#6366f1;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Admin</a>
+                            <?php endif; ?>
+                            <?php if ( $dash_pass ) : ?>
+                                <span style="font-size:0.72rem;color:#64748b;white-space:nowrap;">Password: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
+                            <?php endif; ?>
+                        </div>
                     </td>
                     <td>
                         <button class="pfg-del-company-btn" data-id="<?php echo esc_attr( $co->id ); ?>"
