@@ -513,11 +513,11 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         <div class="pfg-section">
             <h2 class="pfg-section-title">Benchmarking</h2>
             <p class="pfg-section-desc">Compare a company&#8217;s CSF averages against the global average.</p>
-            <div class="pfg-dash-bench-controls">
-                <label class="pfg-dash-bench-label" for="pfg-bench-co-select">Select Company:</label>
-                <select id="pfg-bench-co-select" class="pfg-dash-select">
-                    <option value="">&#8212; choose a company &#8212;</option>
-                </select>
+            <div class="pfg-dash-bench-controls" id="pfg-bench-co-controls">
+                <p style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;">Select one or more companies to compare:</p>
+                <div id="pfg-bench-co-checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.25rem;max-height:120px;overflow-y:auto;padding:4px 0;">
+                    <span style="color:#94a3b8;font-size:0.8rem;">Loading&#8230;</span>
+                </div>
             </div>
             <div id="pfg-bench-chart-wrap" style="position:relative;height:320px;margin-top:1.25rem;">
                 <canvas id="pfg-bench-chart"></canvas>
@@ -545,6 +545,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                 </select>
                 <select id="pfg-dash-dept" class="pfg-dash-select" style="width:100%;">
                     <option value="">All Departments</option>
+                </select>
+                <select id="pfg-dash-timeframe" class="pfg-dash-select" style="width:100%;">
+                    <option value="all" selected>All Time</option>
+                    <option value="30d">Last 30 Days</option>
+                    <option value="quarter">Last Quarter</option>
+                    <option value="12m">Last 12 Months</option>
+                    <option value="custom">Custom Date Range</option>
                 </select>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                     <input type="date" id="pfg-dash-date-from" class="pfg-dash-select" title="From" style="width:140px;flex-shrink:0;">

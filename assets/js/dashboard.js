@@ -33,16 +33,17 @@
         });
         document.getElementById('pfg-dash-export-btn').addEventListener('click', exportCSV);
 
+        var timeframeSel = document.getElementById('pfg-dash-timeframe');
+        if (timeframeSel) timeframeSel.addEventListener('change', onTimeframeChange);
+
         if (slug) {
             var coDrop = document.getElementById('pfg-dash-company');
             if (coDrop) coDrop.style.display = 'none';
-            var benchControls = document.querySelector('.pfg-dash-bench-controls');
+            var benchControls = document.getElementById('pfg-bench-co-controls');
             if (benchControls) benchControls.style.display = 'none';
             var benchPh = document.getElementById('pfg-bench-placeholder');
             if (benchPh) benchPh.textContent = 'Loading department comparison…';
         } else {
-            var benchSel = document.getElementById('pfg-bench-co-select');
-            if (benchSel) benchSel.addEventListener('change', onBenchCompanyChange);
             var coDrop2 = document.getElementById('pfg-dash-company');
             if (coDrop2) coDrop2.addEventListener('change', onCompanyFilter);
         }
@@ -96,8 +97,70 @@
         repopulate('pfg-dash-dept', 'All Departments', opts);
     }
 
+    function onTimeframeChange() {
+        var val  = (document.getElementById('pfg-dash-timeframe') || {}).value || 'all';
+        var from = document.getElementById('pfg-dash-date-from');
+        var to   = document.getElementById('pfg-dash-date-to');
+        var now  = new Date();
+        var toStr = now.toISOString().split('T')[0];
+        if (val === 'all') {
+            if (from) from.value = '';
+            if (to)   to.value   = '';
+        } else if (val !== 'custom') {
+            var start = new Date(now);
+            if (val === '30d')    start.setDate(start.getDate() - 30);
+            else if (val === 'quarter') start.setMonth(start.getMonth() - 3);
+            else if (val === '12m')     start.setFullYear(start.getFullYear() - 1);
+            if (from) from.value = start.toISOString().split('T')[0];
+            if (to)   to.value   = toStr;
+        }
+        if (val !== 'custom') {
+            var slug = pfgDashData.companySlug || '';
+            loadData(
+                slug ? '' : document.getElementById('pfg-dash-company').value,
+                document.getElementById('pfg-dash-dept').value
+            );
+        }
+    }
+
     function populateBenchSelect(companies) {
-        repopulate('pfg-bench-co-select', '— choose a company —', companies);
+        var container = document.getElementById('pfg-bench-co-checkboxes');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!companies || !companies.length) {
+            container.innerHTML = '<span style="color:#94a3b8;font-size:0.8rem;">No companies yet.</span>';
+            return;
+        }
+        companies.forEach(function (co, i) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.value = co; cb.id = 'pfg-bench-cb-' + i;
+            cb.addEventListener('change', onBenchSelectionChange);
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(co));
+            container.appendChild(label);
+        });
+    }
+
+    function onBenchSelectionChange() {
+        var container = document.getElementById('pfg-bench-co-checkboxes');
+        if (!container || !allData) return;
+        var selected = [];
+        container.querySelectorAll('input[type="checkbox"]:checked').forEach(function (cb) {
+            selected.push(cb.value);
+        });
+        var ph   = document.getElementById('pfg-bench-placeholder');
+        var wrap = document.getElementById('pfg-bench-chart-wrap');
+        if (!selected.length) {
+            if (wrap) wrap.style.display = 'none';
+            if (ph)   ph.style.display   = 'block';
+            if (benchChart) { benchChart.destroy(); benchChart = null; }
+            return;
+        }
+        if (ph)   ph.style.display   = 'none';
+        if (wrap) wrap.style.display = 'block';
+        renderBenchChart(selected, allData.company_avgs, allData.global_csf_avgs, allData.global_avg_total);
     }
 
     function repopulate(id, placeholder, items) {
@@ -189,82 +252,44 @@
         }
     }
 
-    // ── Benchmarking ──────────────────────────────────────────────────────
-    function onBenchCompanyChange() {
-        var co   = document.getElementById('pfg-bench-co-select').value;
-        var ph   = document.getElementById('pfg-bench-placeholder');
-        var wrap = document.getElementById('pfg-bench-chart-wrap');
-        if (!co || !allData) {
-            if (wrap) wrap.style.display = 'none';
-            if (ph)   ph.style.display   = 'block';
-            if (benchChart) { benchChart.destroy(); benchChart = null; }
-            return;
-        }
-        if (ph)   ph.style.display  = 'none';
-        if (wrap) wrap.style.display = 'block';
-
-        var coData = null;
-        (allData.company_avgs || []).forEach(function (c) { if (c.company === co) coData = c; });
-        if (!coData) return;
-        renderBenchChart(co, coData, allData.global_csf_avgs, allData.global_avg_total);
-    }
-
-    function renderBenchChart(coName, coData, globalAvgs, globalTotal) {
+    // ── Benchmarking (multi-company radar) ───────────────────────────────
+    function renderBenchChart(companies, companyAvgs, globalAvgs, globalTotal) {
         var ctx = document.getElementById('pfg-bench-chart');
         if (!ctx) return;
         if (benchChart) { benchChart.destroy(); benchChart = null; }
 
-        var coVals     = CSF_KEYS.map(function (k) { return coData[k] || 0; });
-        var globalVals = CSF_KEYS.map(function (k) { return globalAvgs[k] || 0; });
-        var labels     = CSF_SHORT.concat(['Total']);
-        coVals.push(parseFloat((( coData.avg_total || 0) / 10).toFixed(1)));
-        globalVals.push(parseFloat(((globalTotal || 0) / 10).toFixed(1)));
-
+        var palette = [
+            'rgba(240,180,41,1)', 'rgba(59,130,246,1)', 'rgba(239,68,68,1)',
+            'rgba(168,85,247,1)', 'rgba(20,184,166,1)', 'rgba(245,158,11,1)'
+        ];
+        var datasets = [];
+        datasets.push({
+            label: 'Global Average',
+            data: CSF_KEYS.map(function (k) { return globalAvgs[k] || 0; }),
+            borderColor: 'rgba(34,197,94,0.9)',
+            backgroundColor: 'rgba(34,197,94,0.08)',
+            borderWidth: 2, borderDash: [4, 3], pointRadius: 3
+        });
+        companies.forEach(function (coName, i) {
+            var coData = null;
+            (companyAvgs || []).forEach(function (c) { if (c.company === coName) coData = c; });
+            if (!coData) return;
+            var c = palette[i % palette.length];
+            datasets.push({
+                label: coName,
+                data: CSF_KEYS.map(function (k) { return coData[k] || 0; }),
+                borderColor: c,
+                backgroundColor: c.replace(',1)', ',0.1)'),
+                borderWidth: 2, pointRadius: 3
+            });
+        });
         benchChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: coName,
-                        data: coVals,
-                        backgroundColor: 'rgba(240, 180, 41, 0.75)',
-                        borderRadius: 5,
-                        borderSkipped: false
-                    },
-                    {
-                        label: 'Global Average',
-                        data: globalVals,
-                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
-                        borderRadius: 5,
-                        borderSkipped: false
-                    }
-                ]
-            },
+            type: 'radar',
+            data: { labels: CSF_LABELS, datasets: datasets },
             options: {
-                animation: { duration: 0 },
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        min: 0, max: 10,
-                        ticks: { stepSize: 2, font: { size: 10 } },
-                        grid:  { color: 'rgba(0,0,0,0.06)' },
-                        title: { display: true, text: 'Score (/ 10)', font: { size: 10 } }
-                    },
-                    x: { ticks: { font: { size: 10, family: 'Inter' } } }
-                },
-                plugins: {
-                    legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14 } },
-                    tooltip: {
-                        callbacks: {
-                            label: function (c) {
-                                if (c.dataIndex === 10) return ' ' + c.dataset.label + ': ' + (c.raw * 10).toFixed(1) + ' / 100';
-                                return ' ' + c.dataset.label + ': ' + c.raw + ' / 10';
-                            }
-                        }
-                    }
-                }
+                animation: { duration: 0 }, responsive: true, maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: 'rgba(0,0,0,0.07)' }, pointLabels: { font: { size: 9, family: 'Inter' } } } },
+                plugins: { legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 12 } }, tooltip: { callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + c.raw + ' / 10'; } } } }
             }
         });
     }
