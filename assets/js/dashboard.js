@@ -461,7 +461,7 @@
         CSF_KEYS.forEach(function (k) { avgCSF[k] = (avgCSF[k] / n).toFixed(1); });
 
         var isClient   = !!(pfgDashData && pfgDashData.companySlug);
-        var hideDelete = isClient;
+        var hideDelete = !!(pfgDashData && pfgDashData.hideDelete);
         var html = '<div style="overflow-x:auto;"><table class="pfg-dash-table"><thead><tr>';
         html += '<th>PDF</th><th>Name</th>';
         if (!isClient) html += '<th>Company</th>';

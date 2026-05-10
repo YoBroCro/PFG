@@ -88,7 +88,7 @@ function pfg_render_client_login( $atts = [] ) {
     $slug  = $atts['company_slug'];
 
     if ( $slug && ! empty( $_COOKIE[ 'pfg_auth_' . $slug ] ) ) {
-        return pfg_render_admin_dashboard( [ 'company_slug' => $slug ] );
+        return pfg_render_admin_dashboard( [ 'company_slug' => $slug, 'hide_delete' => '1' ] );
     }
 
     $logo_url       = PFG_PLUGIN_URL . 'assets/images/logo.png';
@@ -609,6 +609,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         'pluginUrl'   => PFG_PLUGIN_URL,
         'logoUrl'     => $logo_url,
         'companySlug' => $atts['company_slug'],
+        'hideDelete'  => ! empty( $atts['hide_delete'] ),
         'trendDepts'  => $trend_depts,
     ] );
     ob_start();
