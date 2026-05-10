@@ -619,8 +619,10 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             <div class="pfg-logo-mark">
                 <?php if ( $atts['company_slug'] && ! $has_custom_logo_dash && $co_name_dash ) : ?>
                     <span class="pfg-company-name-title"><?php echo esc_html( $co_name_dash ); ?></span>
-                <?php else : ?>
+                <?php elseif ( $atts['company_slug'] ) : ?>
                     <img src="<?php echo esc_url( $logo_url ); ?>" class="pfg-logo-img" alt="Logo">
+                <?php else : ?>
+                    <!-- logo placeholder: add img tag here if needed -->
                 <?php endif; ?>
             </div>
             <h1 class="pfg-title">Admin Dashboard</h1>
@@ -907,6 +909,13 @@ function pfg_ajax_dashboard_data() {
         }
         $company_avgs[] = $entry;
     }
+
+    $co_tbl           = $wpdb->prefix . 'pfg_companies';
+    $company_logo_map = [];
+    foreach ( $companies as $co ) {
+        $logo = $wpdb->get_var( $wpdb->prepare( "SELECT logo_url FROM {$co_tbl} WHERE name = %s", $co ) );
+        if ( $logo ) $company_logo_map[ $co ] = $logo;
+    }
     // phpcs:enable
 
     wp_send_json_success( [
@@ -919,6 +928,7 @@ function pfg_ajax_dashboard_data() {
         'company_dept_map'     => $company_dept_map,
         'companies'            => $companies,
         'departments'          => $departments,
+        'company_logo_map'     => $company_logo_map,
     ] );
 }
 

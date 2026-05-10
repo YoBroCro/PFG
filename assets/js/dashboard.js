@@ -460,13 +460,16 @@
         avgTotal = (avgTotal / n).toFixed(1);
         CSF_KEYS.forEach(function (k) { avgCSF[k] = (avgCSF[k] / n).toFixed(1); });
 
-        var isClient = !!(pfgDashData && pfgDashData.companySlug);
+        var isClient   = !!(pfgDashData && pfgDashData.companySlug);
+        var hideDelete = isClient;
         var html = '<div style="overflow-x:auto;"><table class="pfg-dash-table"><thead><tr>';
         html += '<th>PDF</th><th>Name</th>';
         if (!isClient) html += '<th>Company</th>';
         html += '<th>Dept</th><th>Email</th>';
         CSF_SHORT.forEach(function (l) { html += '<th>' + l + '</th>'; });
-        html += '<th>Total</th><th>Tier</th><th>Date</th><th>Del</th></tr></thead><tbody>';
+        html += '<th>Total</th><th>Tier</th><th>Date</th>';
+        if (!hideDelete) html += '<th>Del</th>';
+        html += '</tr></thead><tbody>';
         rows.forEach(function (row, idx) {
             html += '<tr>';
             html += '<td><button class="pfg-pdf-row-btn" data-idx="' + idx + '" title="Download PDF">&#8595;</button></td>';
@@ -479,7 +482,7 @@
             html += '<td style="text-align:center;font-weight:700;">' + esc(row.total_score) + '</td>';
             html += '<td>' + esc(row.tier) + '</td>';
             html += '<td>' + esc((row.submitted_at || '').split(' ')[0]) + '</td>';
-            html += '<td><button class="pfg-del-row-btn" data-id="' + esc(row.id) + '" title="Delete" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">&#10005;</button></td>';
+            if (!hideDelete) html += '<td><button class="pfg-del-row-btn" data-id="' + esc(row.id) + '" title="Delete">&#10005;</button></td>';
             html += '</tr>';
         });
         html += '</tbody>';
@@ -489,7 +492,7 @@
         html += isClient ? '<td colspan="2"></td>' : '<td colspan="3"></td>';
         CSF_KEYS.forEach(function (k) { html += '<td style="text-align:center;color:#16a34a;">' + avgCSF[k] + '</td>'; });
         html += '<td style="text-align:center;color:#16a34a;">' + avgTotal + '</td>';
-        html += '<td colspan="3"></td>';
+        html += hideDelete ? '<td colspan="2"></td>' : '<td colspan="3"></td>';
         html += '</tr></tfoot>';
         html += '</table></div>';
         wrap.innerHTML = html;
@@ -544,10 +547,13 @@
         var doc = new jsPDFLib({ unit: 'mm', format: 'a4', orientation: 'portrait' });
         var W = 210, margin = 14, y = 14;
 
-        if (pfgDashData.pluginUrl) {
+        var logoSrc = (allData && allData.company_logo_map && allData.company_logo_map[row.company])
+            || pfgDashData.logoUrl
+            || '';
+        if (logoSrc) {
             try {
                 var logoImg = new Image();
-                logoImg.src = pfgDashData.logoUrl || (pfgDashData.pluginUrl + 'assets/images/logo.png');
+                logoImg.src = logoSrc;
                 doc.addImage(logoImg, 'PNG', W / 2 - 20, y, 40, 14);
                 y += 18;
             } catch(e) {}
