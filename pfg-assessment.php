@@ -612,6 +612,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         'hideDelete'  => ! empty( $atts['hide_delete'] ),
         'trendDepts'  => $trend_depts,
     ] );
+    if ( ! empty( $atts['hide_delete'] ) ) {
+        wp_add_inline_script(
+            'pfg-dashboard',
+            'if(window.pfgDashData){ pfgDashData.hideDelete = true; }',
+            'after'
+        );
+    }
     ob_start();
     ?>
     <div id="pfg-dashboard" class="pfg-dash-wrap">
