@@ -758,8 +758,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                         </div>
                     </td>
                     <td>
-                        <button class="pfg-del-company-btn" data-id="<?php echo esc_attr( $co->id ); ?>"
-                            style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">&#10005;</button>
+                        <button class="pfg-del-company-btn" data-id="<?php echo esc_attr( $co->id ); ?>">&#10005;</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
