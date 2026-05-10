@@ -718,7 +718,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             <?php if ( $company_list ) : ?>
             <div style="overflow-x:auto;margin-bottom:1.5rem;">
             <table class="pfg-dash-table">
-                <thead><tr><th>Logo</th><th>Name</th><th>Slug</th><th>Links &amp; Password</th><th>Del</th></tr></thead>
+                <thead><tr><th>Logo</th><th>Name</th><th>Links &amp; Password</th><th>Del</th></tr></thead>
                 <tbody>
                 <?php foreach ( $company_list as $co ) :
                     // phpcs:disable WordPress.DB.DirectDatabaseQuery
@@ -740,7 +740,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                         <?php endif; ?>
                     </td>
                     <td><?php echo esc_html( $co->name ); ?></td>
-                    <td style="color:#64748b;font-size:0.8rem;"><?php echo esc_html( $co->slug ); ?></td>
+
                     <td>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <?php if ( $assess_url ) : ?>
