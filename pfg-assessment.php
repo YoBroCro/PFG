@@ -581,7 +581,7 @@ function pfg_render_admin_page() {
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard( $atts = [] ) {
-    $atts            = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $atts            = shortcode_atts( [ 'company_slug' => '', 'hide_delete' => '' ], $atts );
     $logo_url        = PFG_PLUGIN_URL . 'assets/images/logo.png';
     $co_name_dash    = '';
     $has_custom_logo_dash = false;
