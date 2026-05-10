@@ -47,6 +47,13 @@
         var timeframeSel = document.getElementById('pfg-dash-timeframe');
         if (timeframeSel) timeframeSel.addEventListener('change', onTimeframeChange);
 
+        var trendGranSel = document.getElementById('pfg-trend-granularity');
+        if (trendGranSel) {
+            trendGranSel.addEventListener('change', function () {
+                if (allData) renderTrendChart(allData.rows);
+            });
+        }
+
         if (slug) {
             var coDrop = document.getElementById('pfg-dash-company');
             if (coDrop) coDrop.style.display = 'none';
@@ -356,25 +363,44 @@
     }
 
     // ── Trend Chart (client view) ─────────────────────────────────────────
+    function isoWeek(d) {
+        var t = new Date(d.getTime());
+        t.setHours(0, 0, 0, 0);
+        t.setDate(t.getDate() + 3 - (t.getDay() + 6) % 7);
+        var w1 = new Date(t.getFullYear(), 0, 4);
+        return 1 + Math.round(((t.getTime() - w1.getTime()) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
+    }
+
+    function trendGroupKey(dateStr, gran) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        if (gran === 'day')  return dateStr.substring(0, 10);
+        if (gran === 'week') { var w = isoWeek(d); return d.getFullYear() + '-W' + (w < 10 ? '0' : '') + w; }
+        if (gran === 'year') return String(d.getFullYear());
+        return dateStr.substring(0, 7);
+    }
+
     function renderTrendChart(rows) {
         var ctx = document.getElementById('pfg-trend-chart');
         if (!ctx) return;
         if (trendChart) { trendChart.destroy(); trendChart = null; }
         if (!rows || !rows.length) return;
-        var monthly = {};
+        var granSel = document.getElementById('pfg-trend-granularity');
+        var gran    = granSel ? granSel.value : 'month';
+        var grouped = {};
         rows.forEach(function (row) {
-            var month = (row.submitted_at || '').substring(0, 7);
-            if (!month) return;
-            if (!monthly[month]) monthly[month] = { sum: 0, count: 0 };
-            monthly[month].sum   += parseFloat(row.total_score) || 0;
-            monthly[month].count += 1;
+            var key = trendGroupKey(row.submitted_at || '', gran);
+            if (!key) return;
+            if (!grouped[key]) grouped[key] = { sum: 0, count: 0 };
+            grouped[key].sum   += parseFloat(row.total_score) || 0;
+            grouped[key].count += 1;
         });
-        var months = Object.keys(monthly).sort();
-        var avgs   = months.map(function (m) { return parseFloat((monthly[m].sum / monthly[m].count).toFixed(1)); });
+        var keys = Object.keys(grouped).sort();
+        var avgs = keys.map(function (k) { return parseFloat((grouped[k].sum / grouped[k].count).toFixed(1)); });
         trendChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: months,
+                labels: keys,
                 datasets: [{ label: 'Avg Total Score', data: avgs, borderColor: 'rgba(34,197,94,0.9)', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#22C55E', pointRadius: 4, borderWidth: 2 }]
             },
             options: {

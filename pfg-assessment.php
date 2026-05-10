@@ -74,16 +74,23 @@ function pfg_handle_client_login() {
     $stored = get_post_meta( $admin_page->ID, '_pfg_dashboard_password', true );
     if ( $password === $stored ) {
         setcookie( 'pfg_auth_' . $slug, '1', time() + 8 * HOUR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
-        wp_safe_redirect( home_url( '/' . $slug . '-dashboard' ) );
+        wp_safe_redirect( home_url( '/' . $slug . '-admin' ) );
         exit;
     }
+    wp_safe_redirect( add_query_arg( 'pfg_err', '1', home_url( '/' . $slug . '-admin' ) ) );
+    exit;
 }
 
 // ─── CLIENT LOGIN SHORTCODE ───────────────────────────────────────────────
 add_shortcode( 'pfg_client_login', 'pfg_render_client_login' );
 function pfg_render_client_login( $atts = [] ) {
-    $atts           = shortcode_atts( [ 'company_slug' => '' ], $atts );
-    $slug           = $atts['company_slug'];
+    $atts  = shortcode_atts( [ 'company_slug' => '' ], $atts );
+    $slug  = $atts['company_slug'];
+
+    if ( $slug && ! empty( $_COOKIE[ 'pfg_auth_' . $slug ] ) ) {
+        return pfg_render_admin_dashboard( [ 'company_slug' => $slug ] );
+    }
+
     $logo_url       = PFG_PLUGIN_URL . 'assets/images/logo.png';
     $co_name_login  = '';
     $has_logo_login = false;
@@ -118,6 +125,9 @@ function pfg_render_client_login( $atts = [] ) {
                     <input type="password" name="pfg_login_password" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #cbd5e1;border-radius:8px;font-size:0.95rem;box-sizing:border-box;outline:none;" autofocus required>
                 </div>
                 <button type="submit" style="width:100%;padding:0.7rem;background:#22C55E;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;letter-spacing:0.01em;">Enter Dashboard</button>
+                <?php if ( isset( $_GET['pfg_err'] ) ) : ?>
+                    <p class="pfg-login-error" style="color:#ef4444;margin-top:0.75rem;font-size:0.875rem;text-align:center;margin-bottom:0;">Incorrect password. Please try again.</p>
+                <?php endif; ?>
             </form>
         </div>
     </div>
@@ -571,13 +581,7 @@ function pfg_render_admin_page() {
 // ─── FRONTEND ADMIN DASHBOARD ─────────────────────────────────────────────
 add_shortcode( 'pfg_admin_dashboard', 'pfg_render_admin_dashboard' );
 function pfg_render_admin_dashboard( $atts = [] ) {
-    $atts     = shortcode_atts( [ 'company_slug' => '' ], $atts );
-    if ( $atts['company_slug'] ) {
-        $cs = $atts['company_slug'];
-        if ( empty( $_COOKIE[ 'pfg_auth_' . $cs ] ) ) {
-            return '<script>window.location.href=' . wp_json_encode( home_url( '/' . $cs . '-admin' ) ) . ';</script>';
-        }
-    }
+    $atts            = shortcode_atts( [ 'company_slug' => '' ], $atts );
     $logo_url        = PFG_PLUGIN_URL . 'assets/images/logo.png';
     $co_name_dash    = '';
     $has_custom_logo_dash = false;
@@ -655,8 +659,16 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         <!-- Trend Chart (client view only) -->
         <?php if ( $atts['company_slug'] ) : ?>
         <div class="pfg-section" id="pfg-trend-section">
-            <h2 class="pfg-section-title">Performance Trend</h2>
-            <p class="pfg-section-desc">Average total score by month.</p>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+                <h2 class="pfg-section-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;flex:1;">Performance Trend</h2>
+                <select id="pfg-trend-granularity" class="pfg-dash-select" style="min-width:110px;">
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="month" selected>Month</option>
+                    <option value="year">Year</option>
+                </select>
+            </div>
+            <p class="pfg-section-desc" style="margin-top:0;">Average total score over time.</p>
             <div style="position:relative;height:240px;">
                 <canvas id="pfg-trend-chart"></canvas>
             </div>
