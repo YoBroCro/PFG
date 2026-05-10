@@ -744,13 +744,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                     <td>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <?php if ( $assess_url ) : ?>
-                                <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" style="padding:3px 8px;background:#22C55E;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Assessment</a>
+                                <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-assess">Assessment</a>
                             <?php endif; ?>
                             <?php if ( $dash_url ) : ?>
-                                <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" style="padding:3px 8px;background:#3b82f6;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Dashboard</a>
+                                <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-dash">Dashboard</a>
                             <?php endif; ?>
                             <?php if ( $admin_url ) : ?>
-                                <a href="<?php echo esc_url( $admin_url ); ?>" target="_blank" style="padding:3px 8px;background:#6366f1;color:#fff;border-radius:5px;font-size:0.75rem;text-decoration:none;font-weight:600;white-space:nowrap;">Admin</a>
+                                <a href="<?php echo esc_url( $admin_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-admin">Admin</a>
                             <?php endif; ?>
                             <?php if ( $dash_pass ) : ?>
                                 <span style="font-size:0.72rem;color:#64748b;white-space:nowrap;">Password: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
