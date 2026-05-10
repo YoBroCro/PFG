@@ -19,6 +19,18 @@
     var trendChart    = null;
     var allData       = null;
 
+    var BENCH_PALETTE = [
+        'rgba(240,180,41,1)', 'rgba(59,130,246,1)', 'rgba(239,68,68,1)',
+        'rgba(168,85,247,1)', 'rgba(20,184,166,1)', 'rgba(245,158,11,1)'
+    ];
+    function benchColor(name) {
+        var hash = 0;
+        for (var j = 0; j < name.length; j++) {
+            hash = (hash * 31 + name.charCodeAt(j)) >>> 0;
+        }
+        return BENCH_PALETTE[hash % BENCH_PALETTE.length];
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         if (!document.getElementById('pfg-dashboard')) return;
         var slug = pfgDashData.companySlug || '';
@@ -290,10 +302,6 @@
         if (!ctx) return;
         if (benchChart) { benchChart.destroy(); benchChart = null; }
 
-        var palette = [
-            'rgba(240,180,41,1)', 'rgba(59,130,246,1)', 'rgba(239,68,68,1)',
-            'rgba(168,85,247,1)', 'rgba(20,184,166,1)', 'rgba(245,158,11,1)'
-        ];
         var datasets = [];
         datasets.push({
             label: 'Global Average',
@@ -302,11 +310,11 @@
             backgroundColor: 'rgba(34,197,94,0.08)',
             borderWidth: 2, borderDash: [4, 3], pointRadius: 3
         });
-        companies.forEach(function (coName, i) {
+        companies.forEach(function (coName) {
             var coData = null;
             (companyAvgs || []).forEach(function (c) { if (c.company === coName) coData = c; });
             if (!coData) return;
-            var c = palette[i % palette.length];
+            var c = benchColor(coName);
             datasets.push({
                 label: coName,
                 data: CSF_KEYS.map(function (k) { return coData[k] || 0; }),
