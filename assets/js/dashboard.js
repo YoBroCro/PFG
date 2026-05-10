@@ -554,8 +554,15 @@
             try {
                 var logoImg = new Image();
                 logoImg.src = logoSrc;
-                doc.addImage(logoImg, 'PNG', W / 2 - 20, y, 40, 14);
-                y += 18;
+                var logoMaxW = 60, logoMaxH = 18;
+                var logoW = logoImg.naturalWidth  || logoImg.width  || 1;
+                var logoH = logoImg.naturalHeight || logoImg.height || 1;
+                var ratio = logoW / logoH;
+                var rendW = logoMaxW, rendH = rendW / ratio;
+                if (rendH > logoMaxH) { rendH = logoMaxH; rendW = rendH * ratio; }
+                var logoX = W / 2 - rendW / 2;
+                doc.addImage(logoImg, 'PNG', logoX, y, rendW, rendH);
+                y += rendH + 6;
             } catch(e) {}
         }
         doc.setFontSize(14).setFont(undefined, 'bold').setTextColor(30, 41, 59);
