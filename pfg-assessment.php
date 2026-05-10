@@ -595,6 +595,12 @@ function pfg_render_admin_dashboard( $atts = [] ) {
             if ( $co_row->logo_url ) { $logo_url = $co_row->logo_url; $has_custom_logo_dash = true; }
         }
     }
+    $trend_depts = [];
+    if ( $atts['company_slug'] && $co_name_dash ) {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $trend_depts = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT department FROM {$wpdb->prefix}pfg_assessments WHERE company = %s ORDER BY department", $co_name_dash ) );
+    }
     wp_enqueue_media();
     wp_enqueue_script( 'pfg-dashboard', PFG_PLUGIN_URL . 'assets/js/dashboard.js', [ 'chart-js', 'jspdf' ], time(), true );
     wp_localize_script( 'pfg-dashboard', 'pfgDashData', [
@@ -603,6 +609,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         'pluginUrl'   => PFG_PLUGIN_URL,
         'logoUrl'     => $logo_url,
         'companySlug' => $atts['company_slug'],
+        'trendDepts'  => $trend_depts,
     ] );
     ob_start();
     ?>
@@ -661,6 +668,9 @@ function pfg_render_admin_dashboard( $atts = [] ) {
         <div class="pfg-section" id="pfg-trend-section">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:1rem;">
                 <h2 class="pfg-section-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;flex:1;">Performance Trend</h2>
+                <select id="pfg-trend-dept" class="pfg-dash-select" style="min-width:140px;">
+                    <option value="">All Departments</option>
+                </select>
                 <select id="pfg-trend-granularity" class="pfg-dash-select" style="min-width:110px;">
                     <option value="day">Day</option>
                     <option value="week">Week</option>
@@ -841,11 +851,20 @@ function pfg_ajax_dashboard_data() {
                   'score_morale', 'score_process', 'score_recognition', 'score_resource_qty',
                   'score_resource_qual', 'score_standards' ];
 
-    $global_avg_total = (float) $wpdb->get_var( "SELECT AVG(total_score) FROM {$table}" );
+    $comp_where = $locked_company ? $wpdb->prepare( "WHERE company = %s", $locked_company ) : '';
+
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    $global_avg_total = (float) $wpdb->get_var( "SELECT AVG(total_score) FROM {$table} {$comp_where}" );
     $global_csf_avgs  = [];
     foreach ( $csf_keys as $col ) {
-        $global_csf_avgs[ $col ] = round( (float) $wpdb->get_var( "SELECT AVG({$col}) FROM {$table}" ), 1 );
+        $global_csf_avgs[ $col ] = round( (float) $wpdb->get_var( "SELECT AVG({$col}) FROM {$table} {$comp_where}" ), 1 );
     }
+
+    $true_global_csf_avgs = [];
+    foreach ( $csf_keys as $col ) {
+        $true_global_csf_avgs[ $col ] = round( (float) $wpdb->get_var( "SELECT AVG({$col}) FROM {$table}" ), 1 );
+    }
+    // phpcs:enable
 
     if ( $locked_company ) {
         $depts = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT department FROM {$table} WHERE company = %s ORDER BY department", $locked_company ) );
@@ -871,7 +890,9 @@ function pfg_ajax_dashboard_data() {
     $companies   = $locked_company
         ? [ $locked_company ]
         : $wpdb->get_col( "SELECT DISTINCT company FROM {$table} ORDER BY company" );
-    $departments = $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
+    $departments = $locked_company
+        ? $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT department FROM {$table} WHERE company = %s ORDER BY department", $locked_company ) )
+        : $wpdb->get_col( "SELECT DISTINCT department FROM {$table} ORDER BY department" );
 
     $company_dept_map = [];
     foreach ( $companies as $co ) {
@@ -889,14 +910,15 @@ function pfg_ajax_dashboard_data() {
     // phpcs:enable
 
     wp_send_json_success( [
-        'rows'              => $rows,
-        'global_avg_total'  => round( $global_avg_total, 1 ),
-        'global_csf_avgs'   => $global_csf_avgs,
-        'dept_avgs'         => $dept_avgs,
-        'company_avgs'      => $company_avgs,
-        'company_dept_map'  => $company_dept_map,
-        'companies'         => $companies,
-        'departments'       => $departments,
+        'rows'                 => $rows,
+        'global_avg_total'     => round( $global_avg_total, 1 ),
+        'global_csf_avgs'      => $global_csf_avgs,
+        'true_global_csf_avgs' => $true_global_csf_avgs,
+        'dept_avgs'            => $dept_avgs,
+        'company_avgs'         => $company_avgs,
+        'company_dept_map'     => $company_dept_map,
+        'companies'            => $companies,
+        'departments'          => $departments,
     ] );
 }
 

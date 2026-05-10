@@ -54,6 +54,20 @@
             });
         }
 
+        var trendDeptSel = document.getElementById('pfg-trend-dept');
+        if (trendDeptSel) {
+            if (pfgDashData.trendDepts && pfgDashData.trendDepts.length) {
+                pfgDashData.trendDepts.forEach(function (dept) {
+                    var o = document.createElement('option');
+                    o.value = dept; o.textContent = dept;
+                    trendDeptSel.appendChild(o);
+                });
+            }
+            trendDeptSel.addEventListener('change', function () {
+                if (allData) renderTrendChart(allData.rows);
+            });
+        }
+
         if (slug) {
             var coDrop = document.getElementById('pfg-dash-company');
             if (coDrop) coDrop.style.display = 'none';
@@ -341,6 +355,15 @@
                 borderWidth: 2, borderDash: [4, 3], pointRadius: 3
             });
         }
+        if (data.true_global_csf_avgs) {
+            datasets.push({
+                label: 'Global Average',
+                data: CSF_KEYS.map(function (k) { return data.true_global_csf_avgs[k] || 0; }),
+                borderColor: 'rgba(34,197,94,0.9)',
+                backgroundColor: 'rgba(34,197,94,0.06)',
+                borderWidth: 2, borderDash: [2, 4], pointRadius: 3
+            });
+        }
         data.dept_avgs.forEach(function (dept, i) {
             var c = palette[i % palette.length];
             datasets.push({
@@ -385,10 +408,12 @@
         if (!ctx) return;
         if (trendChart) { trendChart.destroy(); trendChart = null; }
         if (!rows || !rows.length) return;
-        var granSel = document.getElementById('pfg-trend-granularity');
-        var gran    = granSel ? granSel.value : 'month';
+        var granSel    = document.getElementById('pfg-trend-granularity');
+        var gran       = granSel ? granSel.value : 'month';
+        var deptFilter = (document.getElementById('pfg-trend-dept') || {}).value || '';
+        var filtered   = deptFilter ? rows.filter(function (r) { return r.department === deptFilter; }) : rows;
         var grouped = {};
-        rows.forEach(function (row) {
+        filtered.forEach(function (row) {
             var key = trendGroupKey(row.submitted_at || '', gran);
             if (!key) return;
             if (!grouped[key]) grouped[key] = { sum: 0, count: 0 };
