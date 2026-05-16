@@ -650,31 +650,20 @@
         var addForm = document.getElementById('pfg-add-company-form');
         if (!addForm) return;
 
-        var logoBtn = document.getElementById('pfg-co-logo-btn');
-        if (logoBtn && window.wp && window.wp.media) {
-            logoBtn.addEventListener('click', function () {
-                var frame = window.wp.media({ title: 'Select Logo', button: { text: 'Use this logo' }, multiple: false });
-                frame.on('select', function () {
-                    var att = frame.state().get('selection').first().toJSON();
-                    document.getElementById('pfg-co-logo-url').value = att.url;
-                    document.getElementById('pfg-co-logo-preview').textContent = att.filename || att.url;
-                });
-                frame.open();
-            });
-        }
-
         addForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var name    = document.getElementById('pfg-co-name').value.trim();
-            var logoUrl = document.getElementById('pfg-co-logo-url').value.trim();
-            var errEl   = document.getElementById('pfg-co-error');
+            var name  = document.getElementById('pfg-co-name').value.trim();
+            var errEl = document.getElementById('pfg-co-error');
             if (!name) { errEl.textContent = 'Company name is required.'; errEl.style.display = 'block'; return; }
             errEl.style.display = 'none';
             var body = new FormData();
-            body.append('action',   'pfg_add_company');
-            body.append('nonce',    pfgDashData.nonce);
-            body.append('name',     name);
-            body.append('logo_url', logoUrl);
+            body.append('action', 'pfg_add_company');
+            body.append('nonce',  pfgDashData.nonce);
+            body.append('name',   name);
+            var fileInput = document.getElementById('pfg-co-logo-file');
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                body.append('logo_file', fileInput.files[0]);
+            }
             fetch(pfgDashData.ajaxUrl, { method: 'POST', body: body })
                 .then(function (r) { return r.json(); })
                 .then(function (res) {

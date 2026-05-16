@@ -752,13 +752,13 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                     <td>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <?php if ( $assess_url ) : ?>
-                                <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-assess">Assessment</a>
+                                <a href="<?php echo esc_url( $assess_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-assess"><?php echo esc_html( $co->name ); ?> PFGPI</a>
                             <?php endif; ?>
                             <?php if ( $dash_url ) : ?>
                                 <a href="<?php echo esc_url( $dash_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-dash">Dashboard</a>
                             <?php endif; ?>
                             <?php if ( $admin_url ) : ?>
-                                <a href="<?php echo esc_url( $admin_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-admin">Admin</a>
+                                <a href="<?php echo esc_url( $admin_url ); ?>" target="_blank" class="pfg-co-link-btn pfg-co-link-admin"><?php echo esc_html( $co->name ); ?> Admin PFGPI</a>
                             <?php endif; ?>
                             <?php if ( $dash_pass ) : ?>
                                 <span style="font-size:0.72rem;color:#64748b;white-space:nowrap;">Password: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;"><?php echo esc_html( $dash_pass ); ?></code></span>
@@ -785,9 +785,7 @@ function pfg_render_admin_dashboard( $atts = [] ) {
                 <div class="pfg-field" style="flex:1;min-width:200px;">
                     <label>Logo <span class="pfg-optional">(optional)</span></label>
                     <div style="display:flex;gap:0.5rem;align-items:center;">
-                        <input type="hidden" id="pfg-co-logo-url">
-                        <span id="pfg-co-logo-preview" style="font-size:0.75rem;color:#64748b;">No file chosen</span>
-                        <button type="button" id="pfg-co-logo-btn" class="pfg-btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.8rem;width:auto;">Upload Logo</button>
+                        <input type="file" id="pfg-co-logo-file" accept="image/*" style="font-size:0.875rem;">
                     </div>
                 </div>
                 <button type="submit" class="pfg-btn-primary" style="width:auto;padding:0.55rem 1.25rem;font-size:0.875rem;">Add Company</button>
@@ -945,7 +943,18 @@ add_action( 'wp_ajax_nopriv_pfg_add_company', 'pfg_add_company' );
 function pfg_add_company() {
     check_ajax_referer( 'pfg_dashboard_nonce', 'nonce' );
     $name     = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
-    $logo_url = esc_url_raw( wp_unslash( $_POST['logo_url'] ?? '' ) );
+    $logo_url = '';
+    if ( ! empty( $_FILES['logo_file']['name'] ) ) {
+        if ( ! function_exists( 'wp_handle_upload' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        $movefile = wp_handle_upload( $_FILES['logo_file'], [ 'test_form' => false ] );
+        if ( $movefile && ! isset( $movefile['error'] ) ) {
+            $logo_url = $movefile['url'];
+        }
+    } else {
+        $logo_url = esc_url_raw( wp_unslash( $_POST['logo_url'] ?? '' ) );
+    }
     if ( ! $name ) { wp_send_json_error( [ 'message' => 'Company name is required.' ] ); }
     $slug = sanitize_title( $name );
     global $wpdb;
