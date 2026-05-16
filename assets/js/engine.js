@@ -354,8 +354,8 @@
         CSF_KEYS.forEach(function (key) {
             var s = document.getElementById('csf-' + key);
             var v = document.getElementById('val-' + key);
-            if (s) { s.value = 5; s.dataset.unset = 'true'; updateTrack(s, 5); }
-            if (v) { v.textContent = '–'; v.style.color = '#94a3b8'; }
+            if (s) { s.value = 5; s.dataset.unset = 'false'; updateTrack(s, 5); }
+            if (v) { v.textContent = '5'; v.style.color = scoreColor(5); }
         });
         var lt = document.getElementById('pfg-live-total');
         if (lt) lt.textContent = '–';

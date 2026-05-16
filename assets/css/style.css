@@ -24,9 +24,11 @@ body { font-family: 'Inter', sans-serif; }
 }
 
 .pfg-logo-img {
-    max-height: 100px;
-    width: auto;
+    max-width: 250px;
+    max-height: 80px;
+    object-fit: contain;
     display: block;
+    margin: 0 auto;
 }
 
 .pfg-company-name-title {
