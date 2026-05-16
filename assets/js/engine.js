@@ -236,7 +236,8 @@
         // Info table
         doc.setTextColor(30, 41, 59);
         var today = new Date().toISOString().split('T')[0];
-        var infoRows = [['Name', name], ['Company', company], ['Department', dept]];
+        var cNameCap = company ? (company.charAt(0).toUpperCase() + company.slice(1)) : '';
+        var infoRows = [['Name', name], ['Company', cNameCap], ['Department', dept]];
         if (email) infoRows.push(['Email', email]);
         infoRows.push(['Date', today]);
         doc.setFontSize(9);

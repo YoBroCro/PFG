@@ -590,7 +590,8 @@
         doc.line(margin, y, W - margin, y);
         y += 6;
 
-        var infoRows = [['Name', row.user_name || ''], ['Company', row.company || ''], ['Department', row.department || ''], ['Date', (row.submitted_at || '').split(' ')[0]]];
+        var cNameDashCap = (row.company || '').charAt(0).toUpperCase() + (row.company || '').slice(1);
+        var infoRows = [['Name', row.user_name || ''], ['Company', cNameDashCap], ['Department', row.department || ''], ['Date', (row.submitted_at || '').split(' ')[0]]];
         if (row.email && row.email !== '-') infoRows.push(['Email', row.email]);
         doc.setFontSize(9);
         infoRows.forEach(function (r) {
@@ -718,6 +719,7 @@
             'Process','Recognition','Resource Qty','Resource Qual','Standards',
             'Total Score','Tier','Submitted At'];
         var lines = [ headers.join(',') ];
+        var sums = [0,0,0,0,0,0,0,0,0,0,0];
         allData.rows.forEach(function (r) {
             lines.push([
                 r.id, csvCell(r.user_name), csvCell(r.company), csvCell(r.department), csvCell(r.email || ''),
@@ -725,7 +727,30 @@
                 r.score_process, r.score_recognition, r.score_resource_qty, r.score_resource_qual, r.score_standards,
                 r.total_score, csvCell(r.tier), r.submitted_at
             ].join(','));
+            sums[0]  += parseFloat(r.score_communication)  || 0;
+            sums[1]  += parseFloat(r.score_knowledge)       || 0;
+            sums[2]  += parseFloat(r.score_leadership)      || 0;
+            sums[3]  += parseFloat(r.score_measurement)     || 0;
+            sums[4]  += parseFloat(r.score_morale)          || 0;
+            sums[5]  += parseFloat(r.score_process)         || 0;
+            sums[6]  += parseFloat(r.score_recognition)     || 0;
+            sums[7]  += parseFloat(r.score_resource_qty)    || 0;
+            sums[8]  += parseFloat(r.score_resource_qual)   || 0;
+            sums[9]  += parseFloat(r.score_standards)       || 0;
+            sums[10] += parseFloat(r.total_score)           || 0;
         });
+        var counts = allData.rows.length;
+        if (counts > 0) {
+            lines.push([
+                '', 'AVERAGE', '', '', '',
+                (sums[0]/counts).toFixed(1),  (sums[1]/counts).toFixed(1),
+                (sums[2]/counts).toFixed(1),  (sums[3]/counts).toFixed(1),
+                (sums[4]/counts).toFixed(1),  (sums[5]/counts).toFixed(1),
+                (sums[6]/counts).toFixed(1),  (sums[7]/counts).toFixed(1),
+                (sums[8]/counts).toFixed(1),  (sums[9]/counts).toFixed(1),
+                (sums[10]/counts).toFixed(1), '', ''
+            ].join(','));
+        }
         var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
         var url  = URL.createObjectURL(blob);
         var a    = document.createElement('a');
