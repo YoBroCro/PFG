@@ -202,19 +202,26 @@
 
         // Logo or title
         if (pfgData.pluginUrl && chartImg !== null) {
-            try {
-                var logoImg = new Image();
-                logoImg.src = pfgData.logoUrl || (pfgData.pluginUrl + 'assets/images/logo.png');
-                var logoMaxW = 60, logoMaxH = 18;
-                var logoW = logoImg.naturalWidth  || logoImg.width  || 1;
-                var logoH = logoImg.naturalHeight || logoImg.height || 1;
-                var ratio = logoW / logoH;
-                var rendW = logoMaxW, rendH = rendW / ratio;
-                if (rendH > logoMaxH) { rendH = logoMaxH; rendW = rendH * ratio; }
-                var logoX = W / 2 - rendW / 2;
-                doc.addImage(logoImg, 'PNG', logoX, y, rendW, rendH);
-                y += rendH + 6;
-            } catch(e) { /* fallback below */ }
+            if (pfgData.logoUrl) {
+                try {
+                    var logoImg = new Image();
+                    logoImg.src = pfgData.logoUrl;
+                    var logoMaxW = 60, logoMaxH = 18;
+                    var logoW = logoImg.naturalWidth  || logoImg.width  || 1;
+                    var logoH = logoImg.naturalHeight || logoImg.height || 1;
+                    var ratio = logoW / logoH;
+                    var rendW = logoMaxW, rendH = rendW / ratio;
+                    if (rendH > logoMaxH) { rendH = logoMaxH; rendW = rendH * ratio; }
+                    var logoX = W / 2 - rendW / 2;
+                    doc.addImage(logoImg, 'PNG', logoX, y, rendW, rendH);
+                    y += rendH + 6;
+                } catch(e) {}
+            } else {
+                var cName = company ? (company.charAt(0).toUpperCase() + company.slice(1)) : 'Company Name';
+                doc.setFontSize(22).setFont(undefined, 'bold').setTextColor(30, 41, 59);
+                doc.text(cName, W / 2, y + 8, { align: 'center' });
+                y += 18;
+            }
         }
         doc.setFontSize(14).setFont(undefined, 'bold');
         doc.text('PFG Predictive Index', W / 2, y, { align: 'center' });
@@ -228,8 +235,10 @@
 
         // Info table
         doc.setTextColor(30, 41, 59);
+        var today = new Date().toISOString().split('T')[0];
         var infoRows = [['Name', name], ['Company', company], ['Department', dept]];
         if (email) infoRows.push(['Email', email]);
+        infoRows.push(['Date', today]);
         doc.setFontSize(9);
         infoRows.forEach(function (r) {
             doc.setFont(undefined, 'normal').setTextColor(100, 116, 139);

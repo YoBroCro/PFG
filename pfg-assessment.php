@@ -1054,6 +1054,8 @@ function pfg_export_csv() {
         'Total Score', 'Tier', 'Submitted At',
     ] );
 
+    $counts = count( $rows );
+    $sums   = array_fill( 0, 11, 0 );
     foreach ( $rows as $row ) {
         fputcsv( $out, [
             $row['id'],
@@ -1074,6 +1076,34 @@ function pfg_export_csv() {
             $row['total_score'],
             pfg_get_tier( (int) $row['total_score'] ),
             $row['submitted_at'],
+        ] );
+        $sums[0]  += $row['score_communication'];
+        $sums[1]  += $row['score_knowledge'];
+        $sums[2]  += $row['score_leadership'];
+        $sums[3]  += $row['score_measurement'];
+        $sums[4]  += $row['score_morale'];
+        $sums[5]  += $row['score_process'];
+        $sums[6]  += $row['score_recognition'];
+        $sums[7]  += $row['score_resource_qty'];
+        $sums[8]  += $row['score_resource_qual'];
+        $sums[9]  += $row['score_standards'];
+        $sums[10] += $row['total_score'];
+    }
+    if ( $counts > 0 ) {
+        fputcsv( $out, [
+            '', 'AVERAGE', '', '', '',
+            number_format( $sums[0] / $counts, 1 ),
+            number_format( $sums[1] / $counts, 1 ),
+            number_format( $sums[2] / $counts, 1 ),
+            number_format( $sums[3] / $counts, 1 ),
+            number_format( $sums[4] / $counts, 1 ),
+            number_format( $sums[5] / $counts, 1 ),
+            number_format( $sums[6] / $counts, 1 ),
+            number_format( $sums[7] / $counts, 1 ),
+            number_format( $sums[8] / $counts, 1 ),
+            number_format( $sums[9] / $counts, 1 ),
+            number_format( $sums[10] / $counts, 1 ),
+            '', '',
         ] );
     }
     fclose( $out );

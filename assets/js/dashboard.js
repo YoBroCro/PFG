@@ -558,6 +558,7 @@
         var logoSrc = (allData && allData.company_logo_map && allData.company_logo_map[row.company])
             || pfgDashData.logoUrl
             || '';
+        if (logoSrc && logoSrc.indexOf('assets/images/logo.png') !== -1) logoSrc = '';
         if (logoSrc) {
             try {
                 var logoImg = new Image();
@@ -572,6 +573,12 @@
                 doc.addImage(logoImg, 'PNG', logoX, y, rendW, rendH);
                 y += rendH + 6;
             } catch(e) {}
+        } else {
+            var rowCo = row.company || 'Company Name';
+            var cNameDash = rowCo.charAt(0).toUpperCase() + rowCo.slice(1);
+            doc.setFontSize(22).setFont(undefined, 'bold').setTextColor(30, 41, 59);
+            doc.text(cNameDash, W / 2, y + 8, { align: 'center' });
+            y += 18;
         }
         doc.setFontSize(14).setFont(undefined, 'bold').setTextColor(30, 41, 59);
         doc.text('PFG Predictive Index', W / 2, y, { align: 'center' });
